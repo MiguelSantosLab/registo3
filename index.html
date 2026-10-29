@@ -1,0 +1,128 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ligacoes</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <div class="sheet">
+        <header class="top">
+            <div class="estado">
+                <span class="info" id="info" aria-live="polite"></span>
+                <button class="acao" id="desfazer" type="button" title="Desfazer a última abertura (Esc)">Desfazer</button>
+                <button class="acao forte" id="limite" type="button" title="Seguir as citações em todas as caixas até não caber mais">Até ao limite</button>
+                <button class="acao" id="repor" type="button">Repor</button>
+            </div>
+        </header>
+        <nav class="side" aria-label="Secções"><ul id="seccoes"></ul></nav>
+        <main class="main" id="conteudo"></main>
+    </div>
+
+    <!-- Fonte do conteúdo: cada .item é lido pelo script.js -->
+    <div id="fonte" hidden>
+    <div class="item 1 resource-exploitation" id="item-1">
+        <p>"[...] artificial intelligence is both embodied and material, made from natural resources, fuel, human labor, infrastructures, logistics, histories, and classifications.” <a href="#item-2">[1]</a></p>
+        <figure class="fig"><img src="images/Final%20Images/fig_1.png" alt="Figura 1" loading="lazy"></figure>
+    </div>
+
+    <div class="item 2 resource-exploitation" id="item-2">
+        <p>“The tech sector’s demand for rare earth minerals, oil, and coal is vast, but the true costs of this extraction is never borne by the industry itself. [...] From the last trees in Malaysia that were harvested to produce latex for the first transatlantic undersea cables to the giant artificial lake of toxic residues in Inner Mongolia, we trace the environmental and human birthplaces of planetary <a href="#item-10">computation networks</a> and see how they continue to terraform the planet.” <a href="#item-3">[2]</a></p>
+        <figure class="fig"><img src="images/Final%20Images/fig_2.webp" alt="Figura 2" loading="lazy"></figure>
+    </div>
+
+    <div class="item 3 resource-exploitation" id="item-3">
+        <p>“The full-stack supply chain of AI reaches into <a href="#item-12">capital</a>, <a href="#item-5">labor</a>, and Earth’s resources... [...] The <a href="#item-10">cloud</a> is the backbone of the artificial intelligence industry, and it’s made of rocks and lithium brine and crude oil.” <a href="#item-4">[3]</a></p>
+        <figure class="fig"><img src="images/Final%20Images/fig_3.png" alt="Figura 3" loading="lazy"></figure>
+    </div>
+
+    <div class="item 4 resource-exploitation" id="item-4">
+        <p>"The urge to make things free and profitable is wholly libertarian, and the misidentification of libertarianism as socialism erases labor [...] <a href="#item-10">Web</a> 2.0 was driven by what Silicon Valley entrepreneurs called “collective intelligence” and what Tiziana Terranova diagnosed as “free labor. <a href="#item-5">[4]</a></p>
+    </div>
+
+    <div class="item 5 resource-exploitation" id="item-5">
+        <p>“Mary Gray and Sid Suri refer to such hidden labor as “<a href="#item-12">ghost work</a>.” [...] Workers do the repetitive tasks that backstop claims of AI magic—but they rarely receive credit for making the systems function.” <a href="#item-6">[5]</a></p>
+    </div>
+
+    <div class="item 6 registry-of-power" id="item-6">
+        <p>“AI systems are built with the logics of <a href="#item-12">capital</a>, policing, and militarization—and this combination further widens the existing asymmetries of power.” <a href="#item-7">[6]</a></p>
+        <figure class="fig"><img src="images/Final%20Images/fig_4.png" alt="Figura 4" loading="lazy"></figure>
+    </div>
+
+    <div class="item 7 registry-of-power" id="item-7">
+        <p>“The <a href="#item-10">Internet</a> [...] has given rise to worldwide <a href="#item-14">surveillance networks</a>, coproduced by states and corporations; social media algorithms, powered by military-grade psychological operations (PSYOPs) that spread lies and conspiracy theories, polarize society, provoke violence, prolong pandemics, and foster planet-wrecking levels of <a href="#item-2">consumption</a>; and artificial intelligence (AI) programs that exacerbate existing inequalities and threaten humanity’s future.” <a href="#item-8">[7]</a></p>
+    </div>
+
+    <div class="item 8 registry-of-power" id="item-8">
+        <p>“Articulating patriotism as policy, tech companies are increasingly expressing strong alignment with the interests of the nation-state [...]” <a href="#item-9">[8]</a></p>
+    </div>
+
+    <div class="item 9 registry-of-power" id="item-9">
+        <p>“The shift from traditional to big data surveillance is associated with a migration of law enforcement operations toward intelligence activities. [...] Intelligence, by contrast, is fundamentally <a href="#item-15">predictive</a>. Intelligence activities involve gathering data; identifying suspicious patterns, locations, activity, and individuals; and preemptively intervening based on the intelligence acquired.” <a href="#item-10">[9]</a></p>
+        <figure class="fig"><img src="images/Final%20Images/fig_5.png" alt="Figura 5" loading="lazy"></figure>
+    </div>
+
+    <div class="item 10 web" id="item-10">
+        <p>“When viewing some documents, the reader can request a search [...] The client sends a request off to the server, often a completely different machine in some other part of the world, and within (typically) a second, the related information, in either hypertext, plain text or multimedia format, is presented. This is done repeatedly, and by a sequence of selections and searches one can find anything that is “out there”.” <a href="#item-11">[10]</a></p>
+        <figure class="fig"><img src="images/Final%20Images/fig_6.png" alt="Figura 6" loading="lazy"></figure>
+    </div>
+
+    <div class="item 11 web" id="item-11">
+        <p>“Perhaps misnamed, rather than being a protocol for transferring hypertext, HTTP is a protocol for transferring <a href="#item-17">information</a> with the efficiency necessary for making hypertext jumps. The data transferred may be plain text, hypertext, images, or anything else.” <a href="#item-12">[11]</a></p>
+        <figure class="fig"><img src="images/Final%20Images/fig_7.png" alt="Figura 7" loading="lazy"></figure>
+    </div>
+
+    <div class="item 12 data-objects" id="item-12">
+        <p>"When the practical circumstances of an activity are <a href="#item-16">instrumented</a>, the resulting machinery rarely takes its measurements without human cooperation, interpretation, categorization, data entry, report writing, displaying of identification, swiping of cards through readers, aiming of sensors at bar codes, and so forth. The real-time accumulation of data on the activity, in other words, introduces new elements into the activity itself.” <a href="#item-13">[12]</a></p>
+        <figure class="fig"><img src="images/Final%20Images/fig_8.png" alt="Figura 8" loading="lazy"></figure>
+    </div>
+
+    <div class="item 13 data-objects" id="item-13">
+        <p>[...] no matter how thoroughly the capture process is controlled, it is impossible, short perhaps of total mechanization of a given form of activity, to remove the elements of interpretation, strategy, and institutional dynamics. This is not to say that capture is impossible [...] The point, rather, is that capture is never purely technical but always sociotechnical in nature." <a href="#item-14">[13]</a></p>
+    </div>
+
+    <div class="item 14 surveillance-model" id="item-14">
+        <p>The surveillance model [...]</p>
+        <p>(1) visual metaphors, as in Orwell’s “Big Brother is watching you” or Bentham’s Panopticon;</p>
+        <p>(2) the assumption that this “watching” is nondisruptive and surreptitious (except perhaps when going astray or issuing a threat);</p>
+        <p>(3) territorial metaphors, as in the “invasion” of a “private” personal space, prototypically the family home, marked out by “rights” and the opposition between “coercion” and “consent”;</p>
+        <p>(4) centralized orchestration by means of a bureaucracy with a unified set of “files”; and</p>
+        <p>(5) identification with the <a href="#item-8">state</a>, and in particular with consciously planned-out malevolent aims of a specifically political nature. <a href="#item-15">[14]</a></p>
+    </div>
+
+    <div class="item 15 capture-model" id="item-15">
+        <p>The capture model [...]</p>
+        <p>(1) linguistic metaphors for human activities, assimilating them to the constructs of a computer system’s representation languages;</p>
+        <p>(2) the assumption that the linguistic “parsing” of human activities involves active intervention in and reorganization of those activities;</p>
+        <p>(3) structural metaphors; the captured activity is figuratively assembled from a “catalog” of parts provided as part of its institutional setting;</p>
+        <p>(4) decentralized and heterogeneous organization; the process is normally conducted within particular, local practices which involve people in the workings of larger social formations; and</p>
+        <p>(5) the driving aims are not political but philosophical, as activity is reconstructed through assimilation to a transcendent (“virtual”) order of mathematical formalism. <a href="#item-16">[15]</a></p>
+    </div>
+
+    <div class="item 16 capture-model" id="item-16">
+        <p>“Instrumentation. Social and technical means are provided, whether through paperwork or machinery [...] Afterward, the participants begin, of necessity, to orient their activities toward the capture machinery and its institutional consequences.” <a href="#item-17">[16]</a></p>
+        <figure class="fig"><img src="images/Final%20Images/fig_9.png" alt="Figura 9" loading="lazy"></figure>
+    </div>
+
+    <div class="item 17 capture-model" id="item-17">
+        <p>“When applied in accordance with the capture model, information technology reduces transaction costs by imposing more clearly defined—less ambiguous and less uncertain—relationships upon the parties to economic interactions, thereby decreasing the overhead associated with coordination of various individuals’ activities. More specifically, once a grammar of action has been imposed upon an activity, the discrete units and individual episodes of the activity are more readily identified, verified, counted, measured, compared, represented, rearranged, contracted for, and evaluated in terms of economic efficiency.” <a href="#item-18">[17]</a></p>
+    </div>
+
+    <div class="item 18 capture-model" id="item-18">
+        <p>“[…] computational processes can use captured records to ‘watch’ the ongoing activities for purposes of error detection, performance measurement, quality control, and so forth.” <a href="#item-19">[18]</a></p>
+        <figure class="fig"><img src="images/Final%20Images/fig_10.png" alt="Figura 10" loading="lazy"></figure>
+    </div>
+
+    <div class="item 19 capture-model" id="item-19">
+        <p>“The Canadian Ministry of Transportation uses a wireless packet radio network and a national database to keep track of commercial vehicles in Toronto. Police and inspectors use information provided by the system to check drivers’ speed and watch for unlicensed vehicles, and they can call up a complete history of any vehicle in a few seconds [...] A trucking firm called Americana Inc. uses wireless communications and the US military’s Global Positioning System (GPS) to allow dispatchers to automatically track its trucks.” <a href="#item-20">[19]</a></p>
+    </div>
+
+    <div class="item 20 capture-model" id="item-20">
+        <p>“In Thailand, the Ministry of the Interior is developing a centralized <a href="#item-11">database</a> to maintain information on each of the country’s citizens. Each individual will have a unique identification number recorded on a card with a <a href="#item-1">magnetic</a> strip.” <a href="#item-1">[20]</a></p>
+    </div>
+    </div>
+</body>
+</html>

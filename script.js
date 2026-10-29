@@ -1,0 +1,395 @@
+const CW = 55, CH = 35;
+const NIVEL_MAX = 3; // nº máximo de divisões por caixa; depois disso, uma ligação abre uma página nova
+const main = document.getElementById('conteudo');
+const info = document.getElementById('info');
+const listaSeccoes = document.getElementById('seccoes');
+const btnDesfazer = document.getElementById('desfazer');
+const btnLimite = document.getElementById('limite');
+const btnRepor = document.getElementById('repor');
+const reduzido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const eCitacao = txt => /^\[\d+\]$/.test(txt.trim());
+const nomeCat = c => c.replace(/-/g, ' ');
+
+// Lê os itens de #fonte: número, categoria, HTML e ligações (pela ordem em que aparecem)
+const itens = {};
+const categorias = [];
+document.querySelectorAll('#fonte .item').forEach(div => {
+  const n = Number(div.id.replace('item-', ''));
+  const cat = [...div.classList].find(c => c !== 'item' && !/^\d+$/.test(c)) || '';
+  const ancoras = [...div.querySelectorAll('a[href^="#item-"]')].map(a => ({
+    alvo: Number(a.getAttribute('href').replace('#item-', '')),
+    texto: a.textContent.trim(),
+    cit: eCitacao(a.textContent),
+  }));
+  itens[n] = { n, cat, html: div.innerHTML, ancoras };
+  if (!categorias.some(c => c.id === cat)) categorias.push({ id: cat, inicio: n });
+});
+
+let proxId = 1;
+// origem: { de: id da folha de onde se abriu, ancora: índice da ligação, rotulo }
+function folha(item, origem = null) {
+  return { id: proxId++, item, origem, filhos: null, dir: null, pai: null };
+}
+function pagina(raiz) {
+  return { id: proxId++, raiz };
+}
+
+// Estado por secção: lista de páginas (cada uma com a sua árvore) + histórico
+// histórico: { interno, pagina } para divisões, { nova: pagina } para páginas abertas
+function seccaoNova(inicio) {
+  return { paginas: [pagina(folha(inicio))], historico: [] };
+}
+const seccoes = {};
+categorias.forEach(c => { seccoes[c.id] = seccaoNova(c.inicio); });
+
+let atual = null;
+let rects = new Map();       // id da folha -> {x,y,w,h,nivel,no,pagina,p} em células, relativo à página
+const elementos = new Map(); // id da folha -> elemento
+const paginasEl = new Map(); // id da página -> elemento
+let animacao = null;
+
+function dimensoes() {
+  return { W: main.clientWidth / CW, H: main.clientHeight / CH };
+}
+
+// Decide a direção: ao longo do lado mais comprido, só se couberem pelo menos 2 células
+function direcao(w, h) {
+  const podeV = w >= 2, podeH = h >= 2;
+  if (podeV && (w * CW >= h * CH || !podeH)) return 'v';
+  if (podeH) return 'h';
+  return null;
+}
+
+// nivel = profundidade na árvore da página = quantas vezes o espaço da caixa já foi dividido
+const podeDividir = r => r.nivel < NIVEL_MAX && !!direcao(r.w, r.h);
+
+function calcular(no, x, y, w, h, saida, extra, nivel = 0) {
+  if (!no.filhos) { saida.set(no.id, { x, y, w, h, nivel, no, ...extra }); return; }
+  const [a, b] = no.filhos;
+  if (no.dir === 'v') {
+    const k = w >= 2 ? Math.floor(w / 2) : w / 2;
+    calcular(a, x, y, k, h, saida, extra, nivel + 1);
+    calcular(b, x + k, y, w - k, h, saida, extra, nivel + 1);
+  } else {
+    const k = h >= 2 ? Math.floor(h / 2) : h / 2;
+    calcular(a, x, y, w, k, saida, extra, nivel + 1);
+    calcular(b, x, y + k, w, h - k, saida, extra, nivel + 1);
+  }
+}
+
+function calcularRects() {
+  const { W, H } = dimensoes();
+  rects = new Map();
+  seccoes[atual].paginas.forEach((pg, p) => calcular(pg.raiz, 0, 0, W, H, rects, { pagina: pg, p }));
+}
+
+function criarElemento(no) {
+  const it = itens[no.item];
+  const el = document.createElement('section');
+  el.className = 'regiao';
+  el.dataset.id = no.id;
+  el.innerHTML = `
+    <div class="cabeca">
+      <span class="num"></span><span class="cat"></span><span class="origem"></span><span class="dim"></span>
+    </div>
+    <div class="texto"></div>
+    <div class="curto"></div>`;
+  el.querySelector('.num').textContent = `[${it.n}]`;
+  el.querySelector('.cat').textContent = nomeCat(it.cat);
+  if (no.origem) el.querySelector('.origem').textContent = `← ${no.origem.rotulo}`;
+  el.querySelector('.texto').innerHTML = it.html;
+  el.querySelectorAll('.texto a[href^="#item-"]').forEach((a, i) => {
+    a.dataset.ancora = i;
+    if (it.ancoras[i].cit) a.classList.add('cit');
+  });
+  el.querySelector('.curto').textContent = it.n;
+  el.setAttribute('aria-label', `Citação ${it.n}, ${nomeCat(it.cat)}`);
+  return el;
+}
+
+function limpar() {
+  main.innerHTML = '';
+  elementos.clear();
+  paginasEl.clear();
+}
+
+function desenhar(novos = new Set()) {
+  if (!atual) {
+    main.innerHTML = '<div class="vazio">Escolha uma secção à esquerda.</div>';
+    elementos.clear();
+    paginasEl.clear();
+    atualizarEstado();
+    return;
+  }
+  const vazio = main.querySelector('.vazio');
+  if (vazio) vazio.remove();
+
+  calcularRects();
+  const s = seccoes[atual];
+
+  // páginas: uma por ecrã, empilhadas na vertical
+  const ids = new Set(s.paginas.map(pg => pg.id));
+  for (const [id, el] of paginasEl) {
+    if (!ids.has(id)) { el.remove(); paginasEl.delete(id); }
+  }
+  s.paginas.forEach((pg, p) => {
+    let el = paginasEl.get(pg.id);
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'pagina';
+      paginasEl.set(pg.id, el);
+      main.appendChild(el);
+    }
+    el.style.top = `${p * main.clientHeight}px`;
+    el.style.height = `${main.clientHeight}px`;
+    el.classList.toggle('seguinte', p > 0);
+  });
+
+  // remover elementos que já não são folhas desta secção
+  for (const [id, el] of elementos) {
+    if (!rects.has(id)) { el.remove(); elementos.delete(id); }
+  }
+  // ligações já abertas: "idFolha:indiceAncora"
+  const abertas = new Set();
+  for (const r of rects.values()) if (r.no.origem) abertas.add(`${r.no.origem.de}:${r.no.origem.ancora}`);
+
+  for (const [id, r] of rects) {
+    let el = elementos.get(id);
+    if (!el) {
+      el = criarElemento(r.no);
+      elementos.set(id, el);
+      paginasEl.get(r.pagina.id).appendChild(el);
+      if (novos.has(id)) piscar(el);
+    }
+    el.style.left = `${r.x * CW}px`;
+    el.style.top = `${r.y * CH}px`;
+    el.style.width = `${r.w * CW}px`;
+    el.style.height = `${r.h * CH}px`;
+    el.classList.toggle('esq', r.x > 0.001);
+    el.classList.toggle('cima', r.y > 0.001);
+    const pode = podeDividir(r);
+    const cw = Math.round(r.w * 10) / 10, ch = Math.round(r.h * 10) / 10;
+    el.querySelector('.dim').textContent = `P${r.p + 1} · N${r.nivel} · ${cw}×${ch}`;
+    el.querySelectorAll('.texto a[data-ancora]').forEach(a => {
+      a.classList.toggle('aberto', abertas.has(`${id}:${a.dataset.ancora}`));
+      a.title = pode ? '' : 'Abre numa página nova, em baixo';
+    });
+  }
+  atualizarEstado();
+}
+
+function piscar(el) {
+  el.classList.remove('nova');
+  void el.offsetWidth;
+  el.classList.add('nova');
+  el.addEventListener('animationend', () => el.classList.remove('nova'), { once: true });
+}
+
+function irPara(r) {
+  const H = main.clientHeight;
+  const topo = r.p * H + r.y * CH, fundo = topo + r.h * CH;
+  const visivel = topo >= main.scrollTop && fundo <= main.scrollTop + H;
+  if (!visivel) main.scrollTo({ top: r.p * H, behavior: reduzido ? 'auto' : 'smooth' });
+}
+
+function contarDivisoes(no) {
+  return no.filhos ? 1 + contarDivisoes(no.filhos[0]) + contarDivisoes(no.filhos[1]) : 0;
+}
+
+function atualizarEstado() {
+  listaSeccoes.querySelectorAll('button').forEach(b => {
+    const s = seccoes[b.dataset.cat];
+    const n = s.historico.length;
+    b.querySelector('.contagem').textContent = n ? n : '';
+  });
+  if (!atual) {
+    info.textContent = '';
+    [btnDesfazer, btnLimite, btnRepor].forEach(b => b.disabled = true);
+    return;
+  }
+  const s = seccoes[atual];
+  const fs = [...rects.values()];
+  const restantes = fs.filter(podeDividir).length;
+  const partes = fs.length;
+  const pags = s.paginas.length;
+  info.innerHTML = `<b>${nomeCat(atual)}</b> · ${partes} ${partes === 1 ? 'caixa' : 'caixas'}`
+    + ` · ${pags} ${pags === 1 ? 'página' : 'páginas'}`;
+  btnDesfazer.disabled = s.historico.length === 0 || !!animacao;
+  btnRepor.disabled = s.historico.length === 0 && !animacao;
+  btnLimite.disabled = restantes === 0 || !!animacao;
+  btnLimite.textContent = animacao ? 'A dividir…' : 'Até ao limite';
+}
+
+function origemDe(no, ancora) {
+  const lig = itens[no.item].ancoras[ancora];
+  return { alvo: lig.alvo, origem: { de: no.id, ancora, rotulo: lig.cit ? lig.texto : `“${lig.texto}”` } };
+}
+
+// Divide uma folha: ela fica na primeira metade, a nova (item ligado) na segunda
+function dividir(no, r, ancora) {
+  const dir = direcao(r.w, r.h);
+  if (!dir || r.nivel >= NIVEL_MAX) return null;
+  const s = seccoes[atual];
+  const { alvo, origem } = origemDe(no, ancora);
+  const nova = folha(alvo, origem);
+  const interno = { id: proxId++, filhos: [no, nova], dir, pai: no.pai };
+  if (no.pai) {
+    const i = no.pai.filhos.indexOf(no);
+    no.pai.filhos[i] = interno;
+  } else {
+    r.pagina.raiz = interno;
+  }
+  no.pai = interno;
+  nova.pai = interno;
+  s.historico.push({ interno, pagina: r.pagina });
+  return nova;
+}
+
+// Abre o item ligado numa página nova, no fim de todas as páginas
+function abrirPagina(no, ancora) {
+  const s = seccoes[atual];
+  const { alvo, origem } = origemDe(no, ancora);
+  const raiz = folha(alvo, origem);
+  const pg = pagina(raiz);
+  s.paginas.push(pg);
+  s.historico.push({ nova: pg });
+  return raiz;
+}
+
+// Folha que já foi aberta a partir desta ligação (se ainda estiver visível)
+function jaAberta(no, ancora) {
+  for (const r of rects.values()) {
+    if (r.no.origem && r.no.origem.de === no.id && r.no.origem.ancora === ancora) return r;
+  }
+  return null;
+}
+
+function abrir(no, ancora) {
+  if (animacao) return;
+  const existente = jaAberta(no, ancora);
+  if (existente) { irPara(existente); piscar(elementos.get(existente.no.id)); return; }
+  const r = rects.get(no.id);
+  if (!r) return;
+  if (podeDividir(r)) {
+    const nova = dividir(no, r, ancora);
+    desenhar(new Set([nova.id]));
+    return;
+  }
+  const raiz = abrirPagina(no, ancora);
+  desenhar(new Set([raiz.id]));
+  irPara(rects.get(raiz.id));
+}
+
+function desfazer() {
+  const s = seccoes[atual];
+  const passo = s.historico.pop();
+  if (!passo) return;
+  if (passo.nova) {
+    s.paginas.splice(s.paginas.indexOf(passo.nova), 1);
+  } else {
+    const { interno, pagina: pg } = passo;
+    const [ficou] = interno.filhos;
+    ficou.pai = interno.pai;
+    if (interno.pai) {
+      const i = interno.pai.filhos.indexOf(interno);
+      interno.pai.filhos[i] = ficou;
+    } else {
+      pg.raiz = ficou;
+    }
+  }
+  desenhar();
+}
+
+function pararAnimacao() {
+  if (animacao) { clearTimeout(animacao); animacao = null; }
+}
+
+// Uma geração: cada caixa segue a sua citação [n], se ainda não estiver aberta.
+// Só divide até ao nível máximo; não abre páginas novas.
+function geracao() {
+  const novos = new Set();
+  for (const r of [...rects.values()]) {
+    if (!podeDividir(r)) continue;
+    const ancora = itens[r.no.item].ancoras.findIndex(a => a.cit);
+    if (ancora < 0 || jaAberta(r.no, ancora)) continue;
+    const n = dividir(r.no, r, ancora);
+    if (n) novos.add(n.id);
+  }
+  return novos;
+}
+
+function ateAoLimite() {
+  if (!atual) return;
+  pararAnimacao();
+  if (reduzido) {
+    let novos;
+    do { novos = geracao(); calcularRects(); } while (novos.size);
+    desenhar();
+    return;
+  }
+  const passo = () => {
+    const novos = geracao();
+    if (!novos.size) { animacao = null; desenhar(); return; }
+    animacao = setTimeout(passo, 260);
+    desenhar(novos);
+  };
+  passo();
+}
+
+function repor() {
+  pararAnimacao();
+  const c = categorias.find(c => c.id === atual);
+  seccoes[atual] = seccaoNova(c.inicio);
+  limpar();
+  main.scrollTop = 0;
+  desenhar();
+}
+
+function escolher(cat) {
+  pararAnimacao();
+  atual = cat;
+  listaSeccoes.querySelectorAll('button').forEach(b => {
+    if (b.dataset.cat === cat) b.setAttribute('aria-current', 'true');
+    else b.removeAttribute('aria-current');
+  });
+  limpar();
+  main.scrollTop = 0;
+  desenhar();
+}
+
+// Coluna lateral: uma secção por categoria, começa na primeira citação dessa categoria
+categorias.forEach(c => {
+  const li = document.createElement('li');
+  li.innerHTML = '<button type="button"><span class="nome"></span><span class="contagem"></span></button>';
+  const b = li.querySelector('button');
+  b.dataset.cat = c.id;
+  b.title = `${nomeCat(c.id)} — começa em [${c.inicio}]`;
+  b.querySelector('.nome').textContent = nomeCat(c.id);
+  b.addEventListener('click', () => escolher(c.id));
+  listaSeccoes.appendChild(li);
+});
+
+main.addEventListener('click', e => {
+  const a = e.target.closest('.texto a[data-ancora]');
+  if (!a) return;
+  e.preventDefault();
+  const el = a.closest('.regiao');
+  const r = rects.get(Number(el.dataset.id));
+  if (r) abrir(r.no, Number(a.dataset.ancora));
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && atual && !animacao) desfazer();
+});
+
+btnDesfazer.addEventListener('click', desfazer);
+btnLimite.addEventListener('click', ateAoLimite);
+btnRepor.addEventListener('click', repor);
+
+let ultimo = '';
+new ResizeObserver(() => {
+  const k = `${main.clientWidth}x${main.clientHeight}`;
+  if (k !== ultimo) { ultimo = k; if (atual) desenhar(); }
+}).observe(main);
+
+escolher(categorias[0].id);
