@@ -4,7 +4,6 @@ const main = document.getElementById('conteudo');
 const info = document.getElementById('info');
 const listaSeccoes = document.getElementById('seccoes');
 const btnDesfazer = document.getElementById('desfazer');
-const btnLimite = document.getElementById('limite');
 const btnRepor = document.getElementById('repor');
 const reduzido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -47,7 +46,6 @@ let atual = null;
 let rects = new Map();       // id da folha -> {x,y,w,h,nivel,no,pagina,p} em células, relativo à página
 const elementos = new Map(); // id da folha -> elemento
 const paginasEl = new Map(); // id da página -> elemento
-let animacao = null;
 
 function dimensoes() {
   return { W: main.clientWidth / CW, H: main.clientHeight / CH };
@@ -193,10 +191,6 @@ function irPara(r) {
   if (!visivel) main.scrollTo({ top: r.p * H, behavior: reduzido ? 'auto' : 'smooth' });
 }
 
-function contarDivisoes(no) {
-  return no.filhos ? 1 + contarDivisoes(no.filhos[0]) + contarDivisoes(no.filhos[1]) : 0;
-}
-
 function atualizarEstado() {
   listaSeccoes.querySelectorAll('button').forEach(b => {
     const s = seccoes[b.dataset.cat];
@@ -205,20 +199,14 @@ function atualizarEstado() {
   });
   if (!atual) {
     info.textContent = '';
-    [btnDesfazer, btnLimite, btnRepor].forEach(b => b.disabled = true);
+    [btnDesfazer, btnRepor].forEach(b => b.disabled = true);
     return;
   }
   const s = seccoes[atual];
-  const fs = [...rects.values()];
-  const restantes = fs.filter(podeDividir).length;
-  const partes = fs.length;
-  const pags = s.paginas.length;
-  info.innerHTML = `<b>${nomeCat(atual)}</b> · ${partes} ${partes === 1 ? 'caixa' : 'caixas'}`
-    + ` · ${pags} ${pags === 1 ? 'página' : 'páginas'}`;
-  btnDesfazer.disabled = s.historico.length === 0 || !!animacao;
-  btnRepor.disabled = s.historico.length === 0 && !animacao;
-  btnLimite.disabled = restantes === 0 || !!animacao;
-  btnLimite.textContent = animacao ? 'A dividir…' : 'Até ao limite';
+  const partes = rects.size;
+  info.innerHTML = `<b>${nomeCat(atual)}</b> · ${partes} ${partes === 1 ? 'caixa' : 'caixas'}`;
+  btnDesfazer.disabled = s.historico.length === 0;
+  btnRepor.disabled = s.historico.length === 0;
 }
 
 function origemDe(no, ancora) {
@@ -266,7 +254,6 @@ function jaAberta(no, ancora) {
 }
 
 function abrir(no, ancora) {
-  if (animacao) return;
   const existente = jaAberta(no, ancora);
   if (existente) { irPara(existente); piscar(elementos.get(existente.no.id)); return; }
   const r = rects.get(no.id);
@@ -301,44 +288,7 @@ function desfazer() {
   desenhar();
 }
 
-function pararAnimacao() {
-  if (animacao) { clearTimeout(animacao); animacao = null; }
-}
-
-// Uma geração: cada caixa segue a sua citação [n], se ainda não estiver aberta.
-// Só divide até ao nível máximo; não abre páginas novas.
-function geracao() {
-  const novos = new Set();
-  for (const r of [...rects.values()]) {
-    if (!podeDividir(r)) continue;
-    const ancora = itens[r.no.item].ancoras.findIndex(a => a.cit);
-    if (ancora < 0 || jaAberta(r.no, ancora)) continue;
-    const n = dividir(r.no, r, ancora);
-    if (n) novos.add(n.id);
-  }
-  return novos;
-}
-
-function ateAoLimite() {
-  if (!atual) return;
-  pararAnimacao();
-  if (reduzido) {
-    let novos;
-    do { novos = geracao(); calcularRects(); } while (novos.size);
-    desenhar();
-    return;
-  }
-  const passo = () => {
-    const novos = geracao();
-    if (!novos.size) { animacao = null; desenhar(); return; }
-    animacao = setTimeout(passo, 260);
-    desenhar(novos);
-  };
-  passo();
-}
-
 function repor() {
-  pararAnimacao();
   const c = categorias.find(c => c.id === atual);
   seccoes[atual] = seccaoNova(c.inicio);
   limpar();
@@ -347,7 +297,6 @@ function repor() {
 }
 
 function escolher(cat) {
-  pararAnimacao();
   atual = cat;
   listaSeccoes.querySelectorAll('button').forEach(b => {
     if (b.dataset.cat === cat) b.setAttribute('aria-current', 'true');
@@ -379,11 +328,10 @@ main.addEventListener('click', e => {
   if (r) abrir(r.no, Number(a.dataset.ancora));
 });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && atual && !animacao) desfazer();
+  if (e.key === 'Escape' && atual) desfazer();
 });
 
 btnDesfazer.addEventListener('click', desfazer);
-btnLimite.addEventListener('click', ateAoLimite);
 btnRepor.addEventListener('click', repor);
 
 let ultimo = '';

@@ -78,7 +78,6 @@ body {
 .acao:hover:not(:disabled) { background: var(--hover); }
 .acao:disabled { color: var(--muted); cursor: default; }
 .acao:focus-visible { outline: 2px solid var(--rule); outline-offset: -2px; }
-.acao.forte { font-weight: 600; }
 
 /* Coluna lateral: uma secção por categoria */
 .side {
@@ -197,6 +196,12 @@ body {
   height: auto;
   object-fit: contain;
 }
+.texto .fig figcaption {
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--muted);
+}
 @container (min-width: 640px) and (min-aspect-ratio: 3 / 2) {
   .texto:has(.fig) {
     display: grid;
@@ -206,7 +211,7 @@ body {
   }
   .texto:has(.fig) > p { grid-column: 1; }
   .texto .fig { grid-column: 2; grid-row: 1 / span 10; margin: 0; max-width: none; }
-  .texto .fig img { max-height: calc(100cqh - var(--cell-h) * 1.5); }
+  .texto .fig img { max-height: calc(100cqh - var(--cell-h) * 4); }
 }
 @container (max-width: 200px) or (max-height: 175px) { .texto .fig { display: none; } }
 
