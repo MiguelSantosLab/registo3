@@ -2,7 +2,6 @@ const CW = 55, CH = 35;
 const NIVEL_MAX = 3; // nº máximo de divisões por caixa; depois disso, uma ligação abre uma página nova
 const main = document.getElementById('conteudo');
 const info = document.getElementById('info');
-const listaSeccoes = document.getElementById('seccoes');
 const btnDesfazer = document.getElementById('desfazer');
 const btnRepor = document.getElementById('repor');
 const reduzido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -12,7 +11,7 @@ const nomeCat = c => c.replace(/-/g, ' ');
 
 // Lê os itens de #fonte: número, categoria, HTML e ligações (pela ordem em que aparecem)
 const itens = {};
-const categorias = [];
+let primeiro = null;
 document.querySelectorAll('#fonte .item').forEach(div => {
   const n = Number(div.id.replace('item-', ''));
   const cat = [...div.classList].find(c => c !== 'item' && !/^\d+$/.test(c)) || '';
@@ -22,7 +21,7 @@ document.querySelectorAll('#fonte .item').forEach(div => {
     cit: eCitacao(a.textContent),
   }));
   itens[n] = { n, cat, html: div.innerHTML, ancoras };
-  if (!categorias.some(c => c.id === cat)) categorias.push({ id: cat, inicio: n });
+  if (primeiro === null) primeiro = n;
 });
 
 let proxId = 1;
@@ -34,15 +33,13 @@ function pagina(raiz) {
   return { id: proxId++, raiz };
 }
 
-// Estado por secção: lista de páginas (cada uma com a sua árvore) + histórico
+// Estado: lista de páginas (cada uma com a sua árvore) + histórico; começa na primeira citação
 // histórico: { interno, pagina } para divisões, { nova: pagina } para páginas abertas
-function seccaoNova(inicio) {
-  return { paginas: [pagina(folha(inicio))], historico: [] };
+function estadoNovo() {
+  return { paginas: [pagina(folha(primeiro))], historico: [] };
 }
-const seccoes = {};
-categorias.forEach(c => { seccoes[c.id] = seccaoNova(c.inicio); });
+let estado = estadoNovo();
 
-let atual = null;
 let rects = new Map();       // id da folha -> {x,y,w,h,nivel,no,pagina,p} em células, relativo à página
 const elementos = new Map(); // id da folha -> elemento
 const paginasEl = new Map(); // id da página -> elemento
@@ -79,7 +76,7 @@ function calcular(no, x, y, w, h, saida, extra, nivel = 0) {
 function calcularRects() {
   const { W, H } = dimensoes();
   rects = new Map();
-  seccoes[atual].paginas.forEach((pg, p) => calcular(pg.raiz, 0, 0, W, H, rects, { pagina: pg, p }));
+  estado.paginas.forEach((pg, p) => calcular(pg.raiz, 0, 0, W, H, rects, { pagina: pg, p }));
 }
 
 function criarElemento(no) {
@@ -113,18 +110,8 @@ function limpar() {
 }
 
 function desenhar(novos = new Set()) {
-  if (!atual) {
-    main.innerHTML = '<div class="vazio">Escolha uma secção à esquerda.</div>';
-    elementos.clear();
-    paginasEl.clear();
-    atualizarEstado();
-    return;
-  }
-  const vazio = main.querySelector('.vazio');
-  if (vazio) vazio.remove();
-
   calcularRects();
-  const s = seccoes[atual];
+  const s = estado;
 
   // páginas: uma por ecrã, empilhadas na vertical
   const ids = new Set(s.paginas.map(pg => pg.id));
@@ -144,7 +131,7 @@ function desenhar(novos = new Set()) {
     el.classList.toggle('seguinte', p > 0);
   });
 
-  // remover elementos que já não são folhas desta secção
+  // remover elementos que já não são folhas
   for (const [id, el] of elementos) {
     if (!rects.has(id)) { el.remove(); elementos.delete(id); }
   }
@@ -192,21 +179,10 @@ function irPara(r) {
 }
 
 function atualizarEstado() {
-  listaSeccoes.querySelectorAll('button').forEach(b => {
-    const s = seccoes[b.dataset.cat];
-    const n = s.historico.length;
-    b.querySelector('.contagem').textContent = n ? n : '';
-  });
-  if (!atual) {
-    info.textContent = '';
-    [btnDesfazer, btnRepor].forEach(b => b.disabled = true);
-    return;
-  }
-  const s = seccoes[atual];
   const partes = rects.size;
-  info.innerHTML = `<b>${nomeCat(atual)}</b> · ${partes} ${partes === 1 ? 'caixa' : 'caixas'}`;
-  btnDesfazer.disabled = s.historico.length === 0;
-  btnRepor.disabled = s.historico.length === 0;
+  info.textContent = `${partes} ${partes === 1 ? 'caixa' : 'caixas'}`;
+  btnDesfazer.disabled = estado.historico.length === 0;
+  btnRepor.disabled = estado.historico.length === 0;
 }
 
 function origemDe(no, ancora) {
@@ -218,7 +194,7 @@ function origemDe(no, ancora) {
 function dividir(no, r, ancora) {
   const dir = direcao(r.w, r.h);
   if (!dir || r.nivel >= NIVEL_MAX) return null;
-  const s = seccoes[atual];
+  const s = estado;
   const { alvo, origem } = origemDe(no, ancora);
   const nova = folha(alvo, origem);
   const interno = { id: proxId++, filhos: [no, nova], dir, pai: no.pai };
@@ -236,7 +212,7 @@ function dividir(no, r, ancora) {
 
 // Abre o item ligado numa página nova, no fim de todas as páginas
 function abrirPagina(no, ancora) {
-  const s = seccoes[atual];
+  const s = estado;
   const { alvo, origem } = origemDe(no, ancora);
   const raiz = folha(alvo, origem);
   const pg = pagina(raiz);
@@ -269,7 +245,7 @@ function abrir(no, ancora) {
 }
 
 function desfazer() {
-  const s = seccoes[atual];
+  const s = estado;
   const passo = s.historico.pop();
   if (!passo) return;
   if (passo.nova) {
@@ -289,35 +265,11 @@ function desfazer() {
 }
 
 function repor() {
-  const c = categorias.find(c => c.id === atual);
-  seccoes[atual] = seccaoNova(c.inicio);
+  estado = estadoNovo();
   limpar();
   main.scrollTop = 0;
   desenhar();
 }
-
-function escolher(cat) {
-  atual = cat;
-  listaSeccoes.querySelectorAll('button').forEach(b => {
-    if (b.dataset.cat === cat) b.setAttribute('aria-current', 'true');
-    else b.removeAttribute('aria-current');
-  });
-  limpar();
-  main.scrollTop = 0;
-  desenhar();
-}
-
-// Coluna lateral: uma secção por categoria, começa na primeira citação dessa categoria
-categorias.forEach(c => {
-  const li = document.createElement('li');
-  li.innerHTML = '<button type="button"><span class="nome"></span><span class="contagem"></span></button>';
-  const b = li.querySelector('button');
-  b.dataset.cat = c.id;
-  b.title = `${nomeCat(c.id)} — começa em [${c.inicio}]`;
-  b.querySelector('.nome').textContent = nomeCat(c.id);
-  b.addEventListener('click', () => escolher(c.id));
-  listaSeccoes.appendChild(li);
-});
 
 main.addEventListener('click', e => {
   const a = e.target.closest('.texto a[data-ancora]');
@@ -328,7 +280,7 @@ main.addEventListener('click', e => {
   if (r) abrir(r.no, Number(a.dataset.ancora));
 });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && atual) desfazer();
+  if (e.key === 'Escape') desfazer();
 });
 
 btnDesfazer.addEventListener('click', desfazer);
@@ -337,7 +289,7 @@ btnRepor.addEventListener('click', repor);
 let ultimo = '';
 new ResizeObserver(() => {
   const k = `${main.clientWidth}x${main.clientHeight}`;
-  if (k !== ultimo) { ultimo = k; if (atual) desenhar(); }
+  if (k !== ultimo) { ultimo = k; desenhar(); }
 }).observe(main);
 
-escolher(categorias[0].id);
+desenhar();
