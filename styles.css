@@ -1,6 +1,7 @@
-/* Layout: faixa de topo de 1 linha e área principal que se divide
-   ao longo das linhas de uma grelha invisível a cada ligação aberta */
-:root {
+/* Layout: faixa de topo de 1 linha e um mapa onde as caixas crescem
+   umas encostadas às outras, alinhadas a uma grelha */
+/*
+   :root {
   --paper: #ffffff;
   --grid: #f6c9c9;
   --rule: #6b2a2a;
@@ -14,11 +15,27 @@
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   color-scheme: light;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #1c1717; --grid: #4a2c2c; --rule: #c98a8a; --ink: #eadede; --muted: #a07f7f; --hover: #2c2020; --flash: #4a2a2a;
-    color-scheme: dark;
-  }
+  */
+:root {
+  --paper: #fbfbfb;
+  --caixa: #DCDCDC;
+  --grid: #0000ff;
+  --rule: #0000ff;
+  --ink: #0000ff;
+  --muted: #787878;
+  --hover: #0000ff;
+  --hover-texto: #ffffff; /* texto sobre o fundo de --hover */
+  --nova: #0000ff;    /* destaque de uma caixa acabada de abrir */
+  --aberta: #0000ff;  /* fundo das palavras ligadas já abertas */
+  --aberta-texto: #ffffff; /* texto das palavras ligadas já abertas */
+  --botao: #0000ff;   /* fundo dos botões + */
+  --botao-texto: #ffffff; /* + dos botões */
+  --neon: #39ff14;    /* filtro das figuras dentro das caixas */
+  --cell-w: 35px;
+  --cell-h: 35px;
+  --font: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color-scheme: light;
 }
 [hidden] { display: none !important; }
 html, body { height: 100%; margin: 0; }
@@ -71,49 +88,91 @@ body {
   cursor: pointer;
   color: var(--ink);
 }
-.acao:hover:not(:disabled) { background: var(--hover); }
+.acao:hover:not(:disabled) { background: var(--hover); color: var(--hover-texto); }
 .acao:disabled { color: var(--muted); cursor: default; }
 .acao:focus-visible { outline: 2px solid var(--rule); outline-offset: -2px; }
 
-/* Área principal: só ela faz scroll; o topo fica fixo */
-.main {
+/* Mapa: arrasta-se e amplia; contém o canvas da grelha e o mundo das caixas */
+.mapa {
   position: relative;
   min-width: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
-  scrollbar-width: thin;
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+  background: var(--paper);
 }
-/* Cada página ocupa um ecrã inteiro; a grelha continua a guiar a divisão, mas não se vê */
-.pagina {
-  position: absolute;
-  left: 0;
-  right: 0;
-  background-color: var(--paper);
-}
-/* Separador entre páginas: uma única linha, por cima do topo da página seguinte */
-.pagina.seguinte::before {
+/* Imagem fixa do mapa (desfocada e mais escura): não acompanha o arrasto nem o zoom.
+   Só se vê de longe (até 25%); quando o texto das caixas aparece, desvanece em 0.5s, como o fundo das caixas */
+.mapa::before {
   content: "";
   position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 1px;
-  background: var(--rule);
-  z-index: 1;
+  inset: -40px; /* além das margens, para o desfoque não deixar bordas claras */
+  background: url("images/Final%20Images/map.jpg") center / cover no-repeat;
+  filter: blur(14px) brightness(.6);
+  opacity: 0;
+  transition: opacity .5s ease;
   pointer-events: none;
 }
+/* Terreno: o mesmo map.jpg, nítido, no espaço do mundo; acompanha o arrasto e o zoom.
+   Por trás fica a versão fixa, desfocada e mais escura, que se vê quando se arrasta para fora dele */
+.terreno {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+  opacity: 0;
+  transition: opacity .5s ease;
+  pointer-events: none;
+}
+.terreno img { position: absolute; display: block; max-width: none; }
+.mapa.longe::before, .mapa.longe .terreno { opacity: 1; }
+.mapa.a-arrastar { cursor: grabbing; }
+#grelha {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+  transition: opacity .5s ease;
+}
+/* a grelha só aparece quando se vê o conteúdo das caixas (acima de 25%), ao mesmo tempo que as imagens desvanecem */
+.mapa.longe #grelha { opacity: 0; }
+.mundo {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.mundo.movendo { will-change: transform; }
+/* Área invisível onde se mede a altura que cada caixa precisa */
+.medidor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Caixas: cada uma tem 1px a mais de largura e altura, por isso as bordas das vizinhas coincidem */
 .regiao {
   position: absolute;
   box-sizing: border-box;
-  container-type: size;
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
-  transition: left .22s ease, top .22s ease, width .22s ease, height .22s ease;
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  background: var(--caixa);
+  transition: border-color .5s ease, background-color .5s ease;
 }
-.regiao.esq { border-left: 1px solid var(--rule); }
-.regiao.cima { border-top: 1px solid var(--rule); }
+/* De longe (conteúdo escondido) a caixa fica sem contorno nem fundo: só a imagem */
+.mapa.longe .regiao { border-color: transparent; background-color: transparent; }
 .regiao.nova { animation: acender .7s ease-out; }
-@keyframes acender { from { background: var(--flash); } to { background: transparent; } }
+@keyframes acender { from { background: var(--nova); } to { background: var(--caixa); } }
 
 .cabeca {
   flex: none;
@@ -133,16 +192,14 @@ body {
 }
 .cabeca .num { color: var(--ink); font-weight: 600; }
 .cabeca .origem { overflow: hidden; text-overflow: ellipsis; text-transform: none; letter-spacing: 0; }
-.cabeca .dim { margin-left: auto; }
 
 .texto {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
   padding: 0 var(--cell-w) calc(var(--cell-h) / 2);
   font-size: 14px;
   line-height: calc(var(--cell-h) / 2);
-  scrollbar-width: thin;
 }
 .texto p { margin: 0 0 calc(var(--cell-h) / 2); max-width: 62ch; }
 .texto p:last-child { margin-bottom: 0; }
@@ -151,30 +208,33 @@ body {
 .texto .fig { margin: 0 0 calc(var(--cell-h) / 2); max-width: 62ch; }
 .texto .fig img {
   display: block;
-  max-width: 100%;
-  max-height: 55cqh;
-  width: auto;
+  width: 100%;
   height: auto;
+  max-height: calc(var(--cell-h) * 8);
   object-fit: contain;
+  object-position: left top;
+  filter: url(#neon); /* verde néon chapado (filtro definido no index.html) */
 }
+/* o SVG só guarda o filtro; não ocupa espaço */
+.filtros { position: absolute; width: 0; height: 0; overflow: hidden; }
+.neon-cor { flood-color: var(--neon); }
 .texto .fig figcaption {
   margin-top: 6px;
   font-size: 11px;
   line-height: 1.4;
   color: var(--muted);
 }
-@container (min-width: 640px) and (min-aspect-ratio: 3 / 2) {
+@container (min-width: 640px) {
   .texto:has(.fig) {
     display: grid;
-    grid-template-columns: minmax(0, 62ch) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     column-gap: var(--cell-w);
     align-content: start;
   }
-  .texto:has(.fig) > p { grid-column: 1; }
+  .texto:has(.fig) > p, .texto:has(.fig) > .acoes { grid-column: 1; }
   .texto .fig { grid-column: 2; grid-row: 1 / span 10; margin: 0; max-width: none; }
-  .texto .fig img { max-height: calc(100cqh - var(--cell-h) * 4); }
+  .texto .fig img { max-height: calc(var(--cell-h) * 10); }
 }
-@container (max-width: 200px) or (max-height: 175px) { .texto .fig { display: none; } }
 
 .texto a {
   color: inherit;
@@ -184,43 +244,75 @@ body {
   cursor: pointer;
   border-radius: 2px;
 }
-.texto a:hover { background: var(--hover); }
+.texto a:hover { background: var(--hover); color: var(--hover-texto); }
 .texto a:focus-visible { outline: 2px solid var(--rule); outline-offset: 1px; }
-.texto a.cit {
-  font-family: var(--mono);
-  font-size: 11px;
-  font-weight: 600;
-  text-decoration: none;
-  white-space: nowrap;
-}
-/* ligação já aberta numa caixa vizinha */
-.texto a.aberto { background: var(--flash); }
+/* ligação já aberta numa caixa vizinha: esbatida, como o botão + já usado */
+.texto a { transition: opacity .2s ease; }
+.texto a.aberto { background: var(--aberta); color: var(--aberta-texto); opacity: .35; }
 
-.curto {
-  display: none;
-  height: 100%;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--muted);
+/* Botão + por baixo do texto: abre a citação seguinte (substitui o [n] no fim do parágrafo) */
+.acoes { display: flex; gap: 8px; }
+.mais {
+  all: unset;
+  box-sizing: border-box;
+  width: var(--cell-h);
+  height: var(--cell-h);
+  border: 1px solid var(--botao);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--botao);
+  color: var(--botao-texto);
+  cursor: pointer;
+  transition: opacity .2s ease;
 }
+/* o + em SVG fica centrado ao píxel e com traço igual ao do círculo (1px) */
+.mais svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  overflow: visible;
+}
+.mais path { stroke-width: 1px; }
+.mais:hover { background: var(--hover); border-color: var(--hover); }
+.mais:focus-visible { outline: 2px solid var(--rule); outline-offset: 2px; }
+/* já aberta: o botão continua a funcionar (leva à caixa), mas fica esbatido */
+.mais.aberto { opacity: .35; }
+
+/* De longe, cada caixa mostra só a sua imagem de fundo */
+.mapa.longe .cabeca, .mapa.longe .texto { visibility: hidden; }
+
+/* Imagem de fundo de cada caixa (--fundo, escolhida ao acaso no script):
+   visível de 0% a 25% de zoom; acima disso desvanece em 0.5s */
+.regiao::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--fundo) 0 0 / 100% 100% no-repeat; /* esticada, sem cortes */
+  filter: var(--filtro, none); /* brilho e matiz sorteados por caixa */
+  opacity: 0;
+  transition: opacity .5s ease;
+  pointer-events: none;
+}
+.mapa.longe .regiao::before { opacity: 1; }
+.cabeca, .texto { position: relative; z-index: 1; }
 
 @container (max-width: 330px) {
   .texto { padding: 0 14px calc(var(--cell-h) / 2); }
   .cabeca { padding-left: 14px; }
 }
-@container (max-width: 240px) { .cabeca .origem, .cabeca .dim { display: none; } }
-@container (max-width: 150px) { .texto { font-size: 12px; padding: 0 8px; } .cabeca { padding-left: 8px; } .cabeca .cat { display: none; } }
-@container (max-width: 100px) or (max-height: 70px) {
-  .cabeca, .texto { display: none; }
-  .curto { display: flex; }
-}
 
+.zoom {
+  padding: 0 12px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
 @media (max-width: 640px) {
-  .info { display: none; }
+  .info, .zoom { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .regiao { transition: none; }
   .regiao.nova { animation: none; }
 }

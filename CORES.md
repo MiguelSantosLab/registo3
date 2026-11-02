@@ -1,41 +1,45 @@
 # Cores do sistema
 
 Todas as cores do projeto estão definidas como variáveis CSS em [styles.css](styles.css), no `:root`.
-O modo escuro aplica-se automaticamente quando o sistema operativo está em tema escuro (`prefers-color-scheme: dark`).
-Nenhuma cor está escrita diretamente no HTML ou no JavaScript.
+Há um único tema (claro); não existe variante para o modo escuro do sistema operativo.
+Nenhuma cor está escrita diretamente no HTML ou no JavaScript (o canvas lê `--grid` do CSS e o filtro SVG lê `--neon`).
 
-| Variável  | Claro     | Escuro    | Uso |
-|-----------|-----------|-----------|-----|
-| `--paper` | `#ffffff` | `#1c1717` | Fundo da página e das páginas da área principal |
-| `--grid`  | `#f6c9c9` | `#4a2c2c` | Separadores entre botões do topo (a grelha de fundo já não é desenhada) |
-| `--rule`  | `#6b2a2a` | `#c98a8a` | Linhas de divisão entre caixas e entre páginas, bordas do topo e da coluna lateral, sublinhado das ligações, contorno de foco |
-| `--ink`   | `#2a2222` | `#eadede` | Texto principal, títulos, botões, número da citação no cabeçalho da caixa |
-| `--muted` | `#9a7474` | `#a07f7f` | Texto secundário: linha de estado, cabeçalho das caixas, contagens, botões desativados |
-| `--hover` | `#fdeeee` | `#2c2020` | Fundo ao passar o rato; secção ativa na coluna lateral |
-| `--flash` | `#f9d7d7` | `#4a2a2a` | Destaque de uma caixa acabada de abrir (animação); fundo de uma ligação já aberta |
+| Variável         | Valor     | Uso |
+|------------------|-----------|-----|
+| `--paper`        | `#fbfbfb` | Fundo da página e do mapa (por baixo das imagens do mapa) |
+| `--caixa`        | `#DCDCDC` | Fundo das caixas no mapa, quando o conteúdo está visível |
+| `--grid`         | `#0000ff` | Separadores entre botões do topo; linhas da grelha do mapa (desenhadas no canvas, a 35% de opacidade) |
+| `--rule`         | `#0000ff` | Bordas das caixas (as de caixas vizinhas coincidem numa só linha), borda do topo, sublinhado das ligações, contorno de foco |
+| `--ink`          | `#0000ff` | Texto principal, botões do topo, número da citação no cabeçalho da caixa |
+| `--muted`        | `#787878` | Texto secundário: linha de estado, zoom, cabeçalho das caixas, legendas das figuras, botões desativados |
+| `--hover`        | `#0000ff` | Fundo ao passar o rato (botões do topo, ligações, botão +) |
+| `--hover-texto`  | `#ffffff` | Texto ao passar o rato (botões do topo, ligações), sobre o fundo de `--hover` |
+| `--nova`         | `#0000ff` | Destaque de uma caixa acabada de abrir (animação) |
+| `--aberta`       | `#0000ff` | Fundo das palavras ligadas cuja caixa já foi aberta |
+| `--aberta-texto` | `#ffffff` | Texto das palavras ligadas cuja caixa já foi aberta |
+| `--botao`        | `#0000ff` | Fundo (e contorno) dos botões + |
+| `--botao-texto`  | `#ffffff` | O + dentro dos botões |
+| `--neon`         | `#39ff14` | Cor do filtro das figuras dentro das caixas (imagem em tons de cinzento multiplicada por esta cor; filtro SVG `#neon` no index.html) |
+
+O botão + de uma citação já aberta e as palavras ligadas já abertas ficam esbatidos (opacidade 35%), sobre as suas cores normais.
 
 ## Valores CSS
 
 ```css
 :root {
-  --paper: #ffffff;
-  --grid: #f6c9c9;
-  --rule: #6b2a2a;
-  --ink: #2a2222;
-  --muted: #9a7474;
-  --hover: #fdeeee;
-  --flash: #f9d7d7;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #1c1717;
-    --grid: #4a2c2c;
-    --rule: #c98a8a;
-    --ink: #eadede;
-    --muted: #a07f7f;
-    --hover: #2c2020;
-    --flash: #4a2a2a;
-  }
+  --paper: #fbfbfb;
+  --caixa: #DCDCDC;
+  --grid: #0000ff;
+  --rule: #0000ff;
+  --ink: #0000ff;
+  --muted: #787878;
+  --hover: #0000ff;
+  --hover-texto: #ffffff;
+  --nova: #0000ff;
+  --aberta: #0000ff;
+  --aberta-texto: #ffffff;
+  --botao: #0000ff;
+  --botao-texto: #ffffff;
+  --neon: #39ff14;
 }
 ```

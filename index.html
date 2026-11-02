@@ -9,15 +9,34 @@
     <script src="script.js" defer></script>
 </head>
 <body>
+    <!-- Filtro verde néon das figuras: passa a imagem a tons de cinzento e multiplica-a pela cor --neon -->
+    <svg class="filtros" aria-hidden="true">
+        <filter id="neon" color-interpolation-filters="sRGB">
+            <feColorMatrix type="saturate" values="0" result="cinza"/>
+            <feFlood class="neon-cor" result="cor"/>
+            <feBlend in="cinza" in2="cor" mode="multiply" result="tinta"/>
+            <feComposite in="tinta" in2="SourceAlpha" operator="in"/>
+        </filter>
+    </svg>
     <div class="sheet">
         <header class="top">
             <div class="estado">
                 <span class="info" id="info" aria-live="polite"></span>
+                <span class="zoom" id="zoom"></span>
+                <button class="acao" id="menos" type="button" title="Afastar (−)" aria-label="Afastar">−</button>
+                <button class="acao" id="mais" type="button" title="Aproximar (+)" aria-label="Aproximar">+</button>
+                <button class="acao" id="centrar" type="button" title="Centrar e afastar até 0% (0)">Centrar</button>
                 <button class="acao" id="desfazer" type="button" title="Desfazer a última abertura (Esc)">Desfazer</button>
                 <button class="acao" id="repor" type="button">Repor</button>
             </div>
         </header>
-        <main class="main" id="conteudo"></main>
+        <!-- Mapa: a grelha é desenhada no canvas; as caixas vivem no "mundo", que se arrasta e amplia -->
+        <main class="mapa" id="mapa">
+            <!-- Terreno: map.jpg no espaço do mundo (arrasta-se e amplia com as caixas) -->
+            <div class="terreno" id="terreno" aria-hidden="true"><img src="images/Final%20Images/map.jpg" alt="" draggable="false"></div>
+            <canvas id="grelha" aria-hidden="true"></canvas>
+            <div class="mundo" id="mundo"></div>
+        </main>
     </div>
 
     <!-- Fonte do conteúdo: cada .item é lido pelo script.js -->
@@ -82,7 +101,7 @@
         <p>[...] no matter how thoroughly the capture process is controlled, it is impossible, short perhaps of total mechanization of a given form of activity, to remove the elements of interpretation, strategy, and institutional dynamics. This is not to say that capture is impossible [...] The point, rather, is that capture is never purely technical but always sociotechnical in nature." <a href="#item-14">[13]</a></p>
     </div>
 
-    <div class="item 14 surveillance-model" id="item-14">
+    <div class="item 14 data-objects" id="item-14">
         <p>The surveillance model [...]</p>
         <p>(1) visual metaphors, as in Orwell’s “Big Brother is watching you” or Bentham’s Panopticon;</p>
         <p>(2) the assumption that this “watching” is nondisruptive and surreptitious (except perhaps when going astray or issuing a threat);</p>
@@ -91,7 +110,7 @@
         <p>(5) identification with the <a href="#item-8">state</a>, and in particular with consciously planned-out malevolent aims of a specifically political nature. <a href="#item-15">[14]</a></p>
     </div>
 
-    <div class="item 15 capture-model" id="item-15">
+    <div class="item 15 data-objects" id="item-15">
         <p>The capture model [...]</p>
         <p>(1) linguistic metaphors for human activities, assimilating them to the constructs of a computer system’s representation languages;</p>
         <p>(2) the assumption that the linguistic “parsing” of human activities involves active intervention in and reorganization of those activities;</p>
@@ -100,25 +119,25 @@
         <p>(5) the driving aims are not political but philosophical, as activity is reconstructed through assimilation to a transcendent (“virtual”) order of mathematical formalism. <a href="#item-16">[15]</a></p>
     </div>
 
-    <div class="item 16 capture-model" id="item-16">
+    <div class="item 16 data-objects" id="item-16">
         <p>“Instrumentation. Social and technical means are provided, whether through paperwork or machinery [...] Afterward, the participants begin, of necessity, to orient their activities toward the capture machinery and its institutional consequences.” <a href="#item-17">[16]</a></p>
         <figure class="fig"><img src="images/Final%20Images/fig_9.png" alt="Cambridge Analytica’s Iowa data dashboard." loading="lazy"><figcaption>Figure 9. Cambridge Analytica’s Iowa data dashboard. Source: Wendy Hui Kyong Chun, Discriminating Data: Correlation, Neighborhoods, and the New Politics of Recognition (Cambridge, MA: The MIT Press, 2021).</figcaption></figure>
     </div>
 
-    <div class="item 17 capture-model" id="item-17">
+    <div class="item 17 data-objects" id="item-17">
         <p>“When applied in accordance with the capture model, information technology reduces transaction costs by imposing more clearly defined—less ambiguous and less uncertain—relationships upon the parties to economic interactions, thereby decreasing the overhead associated with coordination of various individuals’ activities. More specifically, once a grammar of action has been imposed upon an activity, the discrete units and individual episodes of the activity are more readily identified, verified, counted, measured, compared, represented, rearranged, contracted for, and evaluated in terms of economic efficiency.” <a href="#item-18">[17]</a></p>
     </div>
 
-    <div class="item 18 capture-model" id="item-18">
+    <div class="item 18 data-objects" id="item-18">
         <p>“[…] computational processes can use captured records to ‘watch’ the ongoing activities for purposes of error detection, performance measurement, quality control, and so forth.” <a href="#item-19">[18]</a></p>
         <figure class="fig"><img src="images/Final%20Images/fig_10.png" alt="Corporate Algorithmic Governance." loading="lazy"><figcaption>Figure 10. Corporate Algorithmic Governance. Source: Kate Crawford, Atlas of AI: Power, Politics, and the Planetary Costs of Artificial Intelligence (New Haven, CT: Yale University Press, 2021).</figcaption></figure>
     </div>
 
-    <div class="item 19 capture-model" id="item-19">
+    <div class="item 19 data-objects" id="item-19">
         <p>“The Canadian Ministry of Transportation uses a wireless packet radio network and a national database to keep track of commercial vehicles in Toronto. Police and inspectors use information provided by the system to check drivers’ speed and watch for unlicensed vehicles, and they can call up a complete history of any vehicle in a few seconds [...] A trucking firm called Americana Inc. uses wireless communications and the US military’s Global Positioning System (GPS) to allow dispatchers to automatically track its trucks.” <a href="#item-20">[19]</a></p>
     </div>
 
-    <div class="item 20 capture-model" id="item-20">
+    <div class="item 20 data-objects" id="item-20">
         <p>“In Thailand, the Ministry of the Interior is developing a centralized <a href="#item-11">database</a> to maintain information on each of the country’s citizens. Each individual will have a unique identification number recorded on a card with a <a href="#item-1">magnetic</a> strip.” <a href="#item-1">[20]</a></p>
     </div>
     </div>
