@@ -7,3 +7,5 @@ Está em falta:
 3- title card inicial
 
 4- zona de info/referencias/citaçoes
+
+5- mudar os botões de extraction para ficar com o + sempre visivel
