@@ -5,15 +5,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ligacoes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Xanh+Mono:ital@0;1&display=swap">
     <link rel="stylesheet" href="styles.css">
     <script src="script.js" defer></script>
 </head>
 <body>
-    <!-- Filtro verde néon das figuras: passa a imagem a tons de cinzento e multiplica-a pela cor --neon -->
+    <!-- Filtros das figuras, um por categoria: passam a imagem a tons de cinzento e multiplicam-na pela cor da categoria -->
     <svg class="filtros" aria-hidden="true">
-        <filter id="neon" color-interpolation-filters="sRGB">
+        <filter id="tinta-resource-exploitation" color-interpolation-filters="sRGB">
             <feColorMatrix type="saturate" values="0" result="cinza"/>
-            <feFlood class="neon-cor" result="cor"/>
+            <feFlood class="cor-resource-exploitation" result="cor"/>
+            <feBlend in="cinza" in2="cor" mode="multiply" result="tinta"/>
+            <feComposite in="tinta" in2="SourceAlpha" operator="in"/>
+        </filter>
+        <filter id="tinta-registry-of-power" color-interpolation-filters="sRGB">
+            <feColorMatrix type="saturate" values="0" result="cinza"/>
+            <feFlood class="cor-registry-of-power" result="cor"/>
+            <feBlend in="cinza" in2="cor" mode="multiply" result="tinta"/>
+            <feComposite in="tinta" in2="SourceAlpha" operator="in"/>
+        </filter>
+        <filter id="tinta-web" color-interpolation-filters="sRGB">
+            <feColorMatrix type="saturate" values="0" result="cinza"/>
+            <feFlood class="cor-web" result="cor"/>
+            <feBlend in="cinza" in2="cor" mode="multiply" result="tinta"/>
+            <feComposite in="tinta" in2="SourceAlpha" operator="in"/>
+        </filter>
+        <filter id="tinta-data-objects" color-interpolation-filters="sRGB">
+            <feColorMatrix type="saturate" values="0" result="cinza"/>
+            <feFlood class="cor-data-objects" result="cor"/>
             <feBlend in="cinza" in2="cor" mode="multiply" result="tinta"/>
             <feComposite in="tinta" in2="SourceAlpha" operator="in"/>
         </filter>
@@ -30,11 +51,10 @@
                 <button class="acao" id="repor" type="button">Repor</button>
             </div>
         </header>
-        <!-- Mapa: a grelha é desenhada no canvas; as caixas vivem no "mundo", que se arrasta e amplia -->
-        <main class="mapa" id="mapa">
-            <!-- Terreno: map.jpg no espaço do mundo (arrasta-se e amplia com as caixas) -->
-            <div class="terreno" id="terreno" aria-hidden="true"><img src="images/Final%20Images/map.jpg" alt="" draggable="false"></div>
-            <canvas id="grelha" aria-hidden="true"></canvas>
+        <!-- Mapa: as caixas vivem no "mundo", que se arrasta e amplia -->
+        <main class="mapa longe" id="mapa">
+            <!-- Terreno: map.jpg repetido em todas as direções, alinhado com o mundo (arrasta-se e amplia com as caixas) -->
+            <div class="terreno" id="terreno" aria-hidden="true"></div>
             <div class="mundo" id="mundo"></div>
         </main>
     </div>
@@ -42,7 +62,7 @@
     <!-- Fonte do conteúdo: cada .item é lido pelo script.js -->
     <div id="fonte" hidden>
     <div class="item 1 resource-exploitation" id="item-1">
-        <p>"[...] artificial intelligence is both embodied and material, made from natural resources, fuel, human labor, infrastructures, logistics, histories, and classifications.” <a href="#item-2">[1]</a></p>
+        <p>“[...] artificial intelligence is both embodied and material, made from natural resources, fuel, human labor, infrastructures, logistics, histories, and classifications.” <a href="#item-2">[1]</a></p>
         <figure class="fig"><img src="images/Final%20Images/fig_1.png" alt="Silver Peak Lithium Mine." loading="lazy"><figcaption>Figure 1. Silver Peak Lithium Mine. Photograph by Kate Crawford. Source: Kate Crawford, Atlas of AI: Power, Politics, and the Planetary Costs of Artificial Intelligence (New Haven, CT: Yale University Press, 2021).</figcaption></figure>
     </div>
 
@@ -57,7 +77,7 @@
     </div>
 
     <div class="item 4 resource-exploitation" id="item-4">
-        <p>"The urge to make things free and profitable is wholly libertarian, and the misidentification of libertarianism as socialism erases labor [...] <a href="#item-10">Web</a> 2.0 was driven by what Silicon Valley entrepreneurs called “collective intelligence” and what Tiziana Terranova diagnosed as “free labor. <a href="#item-5">[4]</a></p>
+        <p>“The urge to make things free and profitable is wholly libertarian, and the misidentification of libertarianism as socialism erases labor [...] <a href="#item-10">Web</a> 2.0 was driven by what Silicon Valley entrepreneurs called “collective intelligence” and what Tiziana Terranova diagnosed as “free labor. <a href="#item-5">[4]</a></p>
     </div>
 
     <div class="item 5 resource-exploitation" id="item-5">
@@ -93,12 +113,12 @@
     </div>
 
     <div class="item 12 data-objects" id="item-12">
-        <p>"When the practical circumstances of an activity are <a href="#item-16">instrumented</a>, the resulting machinery rarely takes its measurements without human cooperation, interpretation, categorization, data entry, report writing, displaying of identification, swiping of cards through readers, aiming of sensors at bar codes, and so forth. The real-time accumulation of data on the activity, in other words, introduces new elements into the activity itself.” <a href="#item-13">[12]</a></p>
+        <p>“When the practical circumstances of an activity are <a href="#item-16">instrumented</a>, the resulting machinery rarely takes its measurements without human cooperation, interpretation, categorization, data entry, report writing, displaying of identification, swiping of cards through readers, aiming of sensors at bar codes, and so forth. The real-time accumulation of data on the activity, in other words, introduces new elements into the activity itself.” <a href="#item-13">[12]</a></p>
         <figure class="fig"><img src="images/Final%20Images/fig_8.png" alt="Image from Palantir’s Patent US10339416B2." loading="lazy"><figcaption>Figure 8. Image from Palantir’s Patent US10339416B2. Source: Kate Crawford, Atlas of AI: Power, Politics, and the Planetary Costs of Artificial Intelligence (New Haven, CT: Yale University Press, 2021). Patent image courtesy of the U.S. Patent and Trademark Office.</figcaption></figure>
     </div>
 
     <div class="item 13 data-objects" id="item-13">
-        <p>[...] no matter how thoroughly the capture process is controlled, it is impossible, short perhaps of total mechanization of a given form of activity, to remove the elements of interpretation, strategy, and institutional dynamics. This is not to say that capture is impossible [...] The point, rather, is that capture is never purely technical but always sociotechnical in nature." <a href="#item-14">[13]</a></p>
+        <p>[...] no matter how thoroughly the capture process is controlled, it is impossible, short perhaps of total mechanization of a given form of activity, to remove the elements of interpretation, strategy, and institutional dynamics. This is not to say that capture is impossible [...] The point, rather, is that capture is never purely technical but always sociotechnical in nature.” <a href="#item-14">[13]</a></p>
     </div>
 
     <div class="item 14 data-objects" id="item-14">

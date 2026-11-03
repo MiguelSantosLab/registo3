@@ -5,9 +5,6 @@ const ZOOM_LONGE = ZOOM_MIN + 0.1 * (ZOOM_MAX - ZOOM_MIN);
 const mapa = document.getElementById('mapa');
 const mundo = document.getElementById('mundo');
 const terreno = document.getElementById('terreno');
-const terrenoImg = terreno.querySelector('img');
-const grelha = document.getElementById('grelha');
-const ctx = grelha.getContext('2d');
 const info = document.getElementById('info');
 const zoomInfo = document.getElementById('zoom');
 const btnDesfazer = document.getElementById('desfazer');
@@ -55,10 +52,18 @@ let proxId = 1;
 let estado = { caixas: [], historico: [] };
 const elementos = new Map(); // id da caixa -> elemento
 
-// Imagens de fundo (vistas de longe); cada caixa nova recebe uma ao acaso, diferente da caixa de onde veio
-const FUNDOS = [1, 2, 3, 4, 5, 6, 7].map(n => `images/Final%20Images/psicina${n}.jpg`);
-function fundoAoAcaso(evitar) {
-  const opcoes = FUNDOS.filter(f => f !== evitar);
+// Imagens de fundo (vistas de longe), por categoria; cada caixa nova recebe uma ao acaso da sua categoria,
+// diferente da caixa de onde veio quando houver alternativa
+const piscinas = (de, ate) => Array.from({ length: ate - de + 1 }, (_, i) => `images/Final%20Images/psicina${de + i}.jpg`);
+const FUNDOS = {
+  "resource-exploitation": piscinas(1, 3),
+  "registry-of-power": piscinas(4, 5),
+  "web": piscinas(6, 7),
+  "data-objects": piscinas(8, 10),
+};
+function fundoAoAcaso(item, evitar) {
+  const todas = FUNDOS[itens[item].cat] || Object.values(FUNDOS).flat();
+  const opcoes = todas.length > 1 ? todas.filter(f => f !== evitar) : todas;
   return opcoes[Math.floor(Math.random() * opcoes.length)];
 }
 // Filtro da imagem de fundo, sorteado por caixa: brilho entre 0 e 10, matiz entre -15deg e 20deg
@@ -73,6 +78,7 @@ function criarElemento(caixa) {
   const el = document.createElement('section');
   el.className = 'regiao';
   el.dataset.id = caixa.id;
+  el.dataset.cat = it.cat;
   el.innerHTML = `
     <div class="cabeca">
       <span class="num"></span><span class="cat"></span><span class="origem"></span>
@@ -85,16 +91,18 @@ function criarElemento(caixa) {
   if (caixa.origem) el.querySelector('.origem').textContent = `← ${caixa.origem.rotulo}`;
   const texto = el.querySelector('.texto');
   texto.innerHTML = it.html;
-  // as citações [n] saem do parágrafo e passam a ser um botão + por baixo do texto
+  // parágrafos que começam por aspas: as aspas ficam penduradas na margem (ver .aspa no styles.css)
+  texto.querySelectorAll('p').forEach(p => { if (/^["“”«‘']/.test(p.textContent.trimStart())) p.classList.add('aspa'); });
+  // as citações [n] saem do parágrafo e passam a ser um botão [Extract] por baixo do texto
   const acoes = document.createElement('div');
   acoes.className = 'acoes';
   texto.querySelectorAll('a[href^="#item-"]').forEach((a, i) => {
     if (!it.ancoras[i].cit) { a.dataset.ancora = i; return; }
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'mais';
+    b.className = 'extrair';
     b.dataset.ancora = i;
-    b.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>';
+    b.innerHTML = '[Extract<span class="seta" aria-hidden="true"> +</span>]';
     b.setAttribute('aria-label', `Abrir a citação ${it.ancoras[i].alvo}`);
     acoes.appendChild(b);
     a.remove();
@@ -345,51 +353,22 @@ function piscar(el) {
   el.addEventListener('animationend', () => el.classList.remove('nova'), { once: true });
 }
 
-// A cor da grelha lê-se uma vez do CSS; lê-la a cada frame tornava o zoom mais pesado
-let corGrelha = '';
-function lerCorGrelha() {
-  corGrelha = getComputedStyle(document.documentElement).getPropertyValue('--grid').trim();
-  desenharGrelha();
-}
-
-function desenharGrelha() {
-  const dpr = window.devicePixelRatio || 1;
-  const w = mapa.clientWidth, h = mapa.clientHeight;
-  if (grelha.width !== Math.round(w * dpr) || grelha.height !== Math.round(h * dpr)) {
-    grelha.width = Math.round(w * dpr);
-    grelha.height = Math.round(h * dpr);
-  }
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, w, h);
-  let passo = 1;
-  while (CW * cam.z * passo < 14) passo *= 5;
-  const sx = CW * cam.z * passo, sy = CH * cam.z * passo;
-  ctx.strokeStyle = corGrelha;
-  ctx.globalAlpha = 0.35;
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  for (let x = ((cam.x % sx) + sx) % sx; x < w; x += sx) {
-    const X = Math.round(x) + 0.5;
-    ctx.moveTo(X, 0); ctx.lineTo(X, h);
-  }
-  for (let y = ((cam.y % sy) + sy) % sy; y < h; y += sy) {
-    const Y = Math.round(y) + 0.5;
-    ctx.moveTo(0, Y); ctx.lineTo(w, Y);
-  }
-  ctx.stroke();
-}
-
 // Enquanto a câmara se mexe, o mundo é tratado como uma imagem (will-change) para o movimento ser fluido;
 // quando para, o texto volta a ser desenhado nítido à escala final
 let paragem = 0;
 function aplicarCamara() {
-  mundo.style.transform = terreno.style.transform = `translate(${cam.x}px, ${cam.y}px) scale(${cam.z})`;
+  mundo.style.transform = `translate(${cam.x}px, ${cam.y}px) scale(${cam.z})`;
+  if (azulejo) {
+    // cada repetição do terreno tem o tamanho do azulejo no mundo, à escala e posição da câmara
+    terreno.style.backgroundSize = `${azulejo.w * cam.z}px ${azulejo.h * cam.z}px`;
+    // +40: o terreno sai 40px para fora do mapa (margem do desfoque, ver styles.css)
+    terreno.style.backgroundPosition = `${cam.x + 40 + azulejo.x * cam.z}px ${cam.y + 40 + azulejo.y * cam.z}px`;
+  }
   mundo.classList.add('movendo');
   clearTimeout(paragem);
   paragem = setTimeout(() => mundo.classList.remove('movendo'), 150);
   mapa.classList.toggle('longe', cam.z < ZOOM_LONGE);
   zoomInfo.textContent = `${percentagem(cam.z)}%`;
-  desenharGrelha();
 }
 
 function atualizarEstado() {
@@ -432,7 +411,6 @@ function passoZoom(t) {
   const fim = Math.abs(l1 - l0) < 0.002;
   zoomEm(ancora.x, ancora.y, fim ? zoomAlvo : Math.exp(l0 + (l1 - l0) * k));
   zoomAnim = fim ? 0 : requestAnimationFrame(passoZoom);
-  if (fim) voltarAoMapa();
 }
 // zoom relativo ao alvo em curso, para que vários passos da roda se acumulem
 const zoomPor = (sx, sy, f) => zoomSuave(sx, sy, (zoomAnim ? zoomAlvo : cam.z) * f);
@@ -442,37 +420,21 @@ function pararZoom() {
 }
 
 let voo = 0;
-// Enquanto o terreno se vê (de longe), a câmara não deixa o ecrã sair dele;
-// devolve a câmara c presa a esses limites (ou centrada, se o terreno for mais pequeno do que o ecrã)
-let terrenoRect = null; // retângulo do terreno, em px do mundo
-function prender(c) {
-  if (!terrenoRect || c.z >= ZOOM_LONGE) return c;
-  const eixo = (v, a0, a1, tam) => {
-    const lo = tam - a1 * c.z, hi = -a0 * c.z;
-    return lo > hi ? (lo + hi) / 2 : Math.min(hi, Math.max(lo, v));
-  };
-  const r = terrenoRect;
-  return { z: c.z, x: eixo(c.x, r.x0, r.x1, mapa.clientWidth), y: eixo(c.y, r.y0, r.y1, mapa.clientHeight) };
-}
-// Se o ecrã saiu do terreno, desliza de volta até ele
-function voltarAoMapa() {
-  const alvo = prender(cam);
-  if (Math.abs(alvo.x - cam.x) > 0.5 || Math.abs(alvo.y - cam.y) > 0.5) voarPara(alvo);
-}
-// Arrastar para fora do terreno custa cada vez mais (efeito elástico): d é o movimento, fora o quanto já saiu
-const elastico = (d, fora) => fora * d > 0 ? d * 0.4 / (1 + Math.abs(fora) / 150) : d;
-
 function voarPara(alvo) {
   cancelAnimationFrame(voo);
   pararZoom();
-  alvo = prender(alvo);
   if (reduzido) { Object.assign(cam, alvo); aplicarCamara(); return; }
-  const de = { ...cam }, t0 = performance.now(), dur = 380;
+  // o zoom interpola-se em escala logarítmica e o centro do ecrã (no mundo) em linha reta,
+  // para que um zoom grande não faça a vista fugir para o lado a meio do voo
+  const W = mapa.clientWidth / 2, H = mapa.clientHeight / 2;
+  const de = { cx: (W - cam.x) / cam.z, cy: (H - cam.y) / cam.z, lz: Math.log(cam.z) };
+  const para = { cx: (W - alvo.x) / alvo.z, cy: (H - alvo.y) / alvo.z, lz: Math.log(alvo.z) };
+  const t0 = performance.now(), dur = 380 + 120 * Math.abs(para.lz - de.lz);
   const passo = t => {
     const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
-    cam.x = de.x + (alvo.x - de.x) * e;
-    cam.y = de.y + (alvo.y - de.y) * e;
-    cam.z = de.z + (alvo.z - de.z) * e;
+    cam.z = Math.exp(de.lz + (para.lz - de.lz) * e);
+    cam.x = W - (de.cx + (para.cx - de.cx) * e) * cam.z;
+    cam.y = H - (de.cy + (para.cy - de.cy) * e) * cam.z;
     aplicarCamara();
     if (k < 1) voo = requestAnimationFrame(passo);
   };
@@ -496,7 +458,17 @@ function enquadrar(animar = true, zMax = 1) {
   const alvo = camaraPara(x0, y0, x1, y1, zMax);
   cancelAnimationFrame(voo);
   pararZoom();
-  if (animar) voarPara(alvo); else { Object.assign(cam, prender(alvo)); aplicarCamara(); }
+  if (animar) voarPara(alvo); else { Object.assign(cam, alvo); aplicarCamara(); }
+}
+
+// De longe, clicar numa caixa aproxima até 100%: a caixa fica centrada, ou encostada ao canto superior esquerdo se não couber
+const Z_100 = ZOOM_MIN + (100 / 250) * (ZOOM_MAX - ZOOM_MIN);
+function aproximar(c) {
+  const z = Z_100, m = 20;
+  const w = c.w * CW * z, h = c.h * CH * z;
+  const x = w + 2 * m <= mapa.clientWidth ? (mapa.clientWidth - w) / 2 : m;
+  const y = h + 2 * m <= mapa.clientHeight ? (mapa.clientHeight - h) / 2 : m;
+  voarPara({ x: x - c.x * CW * z, y: y - c.y * CH * z, z });
 }
 
 // Traz uma caixa para o ecrã se ainda não estiver toda visível
@@ -521,7 +493,7 @@ function abrir(caixa, ancora) {
   const { alvo, origem } = origemDe(caixa, ancora);
   const lugar = colocar(alvo, caixa);
   if (!lugar) return;
-  const nova = { id: proxId++, item: alvo, origem, x: lugar.x, y: lugar.y, w: lugar.w, h: lugar.h, fundo: fundoAoAcaso(caixa.fundo), filtro: filtroAoAcaso() };
+  const nova = { id: proxId++, item: alvo, origem, x: lugar.x, y: lugar.y, w: lugar.w, h: lugar.h, fundo: fundoAoAcaso(alvo, caixa.fundo), filtro: filtroAoAcaso() };
   estado.caixas.push(nova);
   estado.historico.push(preencher());
   desenhar(new Set([nova.id]));
@@ -539,7 +511,7 @@ function desfazer() {
 function estadoNovo() {
   const w = larguraBase(primeiro);
   return {
-    caixas: [{ id: proxId++, item: primeiro, origem: null, x: 0, y: 0, w, h: alturaMin(primeiro, w), fundo: fundoAoAcaso(), filtro: filtroAoAcaso() }],
+    caixas: [{ id: proxId++, item: primeiro, origem: null, x: 0, y: 0, w, h: alturaMin(primeiro, w), fundo: fundoAoAcaso(primeiro), filtro: filtroAoAcaso() }],
     historico: [], // por cada caixa aberta: [caixa, tamanho anterior] das que foram esticadas
   };
 }
@@ -590,9 +562,8 @@ mapa.addEventListener('pointermove', e => {
       mapa.classList.add('a-arrastar');
     }
     if (arrasto.ativo) {
-      const lim = prender(cam);
-      cam.x += elastico(p.x - ant.x, cam.x - lim.x);
-      cam.y += elastico(p.y - ant.y, cam.y - lim.y);
+      cam.x += p.x - ant.x;
+      cam.y += p.y - ant.y;
       aplicarCamara();
     }
   } else if (ponteiros.size === 2) {
@@ -618,7 +589,6 @@ function largar(e) {
     }
     arrasto = null;
     mapa.classList.remove('a-arrastar');
-    voltarAoMapa();
   }
 }
 mapa.addEventListener('pointerup', largar);
@@ -634,6 +604,12 @@ mapa.addEventListener('wheel', e => {
 
 mapa.addEventListener('click', e => {
   if (suprimirClique) { e.preventDefault(); suprimirClique = false; return; }
+  if (mapa.classList.contains('longe')) {
+    const el = e.target.closest('.regiao');
+    const c = el && estado.caixas.find(c => c.id === Number(el.dataset.id));
+    if (c) aproximar(c);
+    return;
+  }
   const a = e.target.closest('.texto [data-ancora]');
   if (!a) return;
   e.preventDefault();
@@ -657,27 +633,27 @@ btnMais.addEventListener('click', () => zoomCentro(1.25));
 btnMenos.addEventListener('click', () => zoomCentro(0.8));
 btnCentrar.addEventListener('click', () => enquadrar(true, ZOOM_MIN)); // centra a forma no zoom 0%
 
-new ResizeObserver(() => { desenharGrelha(); voltarAoMapa(); }).observe(mapa);
-lerCorGrelha();
 
-// Terreno: map.jpg centrado na primeira caixa; no zoom mínimo é 1.6x maior do que o ecrã (há espaço para arrastar)
+// Terreno: um azulejo de map.jpg centrado na primeira caixa (no zoom mínimo, 1.6x maior do que o ecrã),
+// repetido sem fim para todos os lados
+const terrenoImg = new Image();
+const terrenoPronto = new Promise(ok => {
+  terrenoImg.onload = ok;
+  terrenoImg.onerror = ok;
+  terrenoImg.src = 'images/Final%20Images/map.jpg';
+});
+let azulejo = null; // { x, y, w, h } em px do mundo
 function colocarTerreno() {
   const r = terrenoImg.naturalWidth / terrenoImg.naturalHeight || 1;
   const c = estado.caixas[0];
   const cx = (c.x + c.w / 2) * CW, cy = (c.y + c.h / 2) * CH;
   const w = Math.max(mapa.clientWidth, mapa.clientHeight * r) / ZOOM_MIN * 1.6, h = w / r;
-  terrenoRect = { x0: cx - w / 2, y0: cy - h / 2, x1: cx + w / 2, y1: cy + h / 2 };
-  Object.assign(terrenoImg.style, {
-    width: `${w}px`, height: `${h}px`, left: `${terrenoRect.x0}px`, top: `${terrenoRect.y0}px`,
-  });
+  azulejo = { x: cx - w / 2, y: cy - h / 2, w, h };
 }
 
-const terrenoPronto = new Promise(ok => {
-  if (terrenoImg.complete) ok();
-  else { terrenoImg.onload = ok; terrenoImg.onerror = ok; }
-});
-
-Promise.all([carregarImagens(), document.fonts.ready, terrenoPronto]).then(() => {
+// a Xanh Mono tem de estar carregada antes de medir a altura das caixas
+const letraPronta = Promise.all([document.fonts.load('14px "Xanh Mono"'), document.fonts.load('italic 14px "Xanh Mono"')]).catch(() => {}).then(() => document.fonts.ready);
+Promise.all([carregarImagens(), letraPronta, terrenoPronto]).then(() => {
   estado = estadoNovo();
   colocarTerreno();
   desenhar();

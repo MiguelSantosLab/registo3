@@ -18,22 +18,28 @@
   */
 :root {
   --paper: #fbfbfb;
-  --caixa: #DCDCDC;
+  --caixa: #1D1816;   /* fundo das caixas */
+  --contorno: #5B4F4B; /* contorno das caixas */
   --grid: #0000ff;
-  --rule: #0000ff;
-  --ink: #0000ff;
+  --rule: #F3F1F1;
+  --ink: #F3F1F1;
   --muted: #787878;
-  --hover: #0000ff;
-  --hover-texto: #ffffff; /* texto sobre o fundo de --hover */
-  --nova: #0000ff;    /* destaque de uma caixa acabada de abrir */
-  --aberta: #0000ff;  /* fundo das palavras ligadas já abertas */
+  --hover: #F3F1F1;
+  --hover-texto: #1D1816; /* texto sobre o fundo de --hover */
+  --nova: #0000ff;    /* destaque de uma caixa acabada de abrir, só para caixas sem categoria (as outras usam a cor da categoria) */
+  --aberta: #1D1816;  /* fundo das palavras ligadas já abertas */
   --aberta-texto: #ffffff; /* texto das palavras ligadas já abertas */
-  --botao: #0000ff;   /* fundo dos botões + */
-  --botao-texto: #ffffff; /* + dos botões */
-  --neon: #39ff14;    /* filtro das figuras dentro das caixas */
+  --botao: #F3F1F1;   /* fundo do [EXTRACT +] ao passar o rato */
+  --botao-texto: #F3F1F1; /* texto do [Extract] */
+  /* cor de cada categoria: título da caixa e filtro das figuras */
+  --cat-resource-exploitation: #6666FF;
+  --cat-registry-of-power: #1AFFFF;
+  --cat-web: #53FF3F;
+  --cat-data-objects: #FFFFB1;
   --cell-w: 35px;
   --cell-h: 35px;
   --font: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --texto-font: "Xanh Mono", ui-monospace, monospace; /* parágrafos das caixas (Google Fonts, ligada no index.html) */
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   color-scheme: light;
 }
@@ -101,44 +107,20 @@ body {
   cursor: grab;
   background: var(--paper);
 }
-/* Imagem fixa do mapa (desfocada e mais escura): não acompanha o arrasto nem o zoom.
-   Só se vê de longe (até 25%); quando o texto das caixas aparece, desvanece em 0.5s, como o fundo das caixas */
-.mapa::before {
-  content: "";
-  position: absolute;
-  inset: -40px; /* além das margens, para o desfoque não deixar bordas claras */
-  background: url("images/Final%20Images/map.jpg") center / cover no-repeat;
-  filter: blur(14px) brightness(.6);
-  opacity: 0;
-  transition: opacity .5s ease;
-  pointer-events: none;
-}
-/* Terreno: o mesmo map.jpg, nítido, no espaço do mundo; acompanha o arrasto e o zoom.
-   Por trás fica a versão fixa, desfocada e mais escura, que se vê quando se arrasta para fora dele */
+/* Terreno: map.jpg repetido sem fim em todas as direções; o script alinha o tamanho e a posição
+   das repetições com a câmara, por isso acompanha o arrasto e o zoom.
+   Nítido de longe (até 25%); quando o texto das caixas aparece, fica desfocado e mais escuro em 0.5s.
+   Sai 40px para fora do mapa para o desfoque não clarear as margens */
 .terreno {
   position: absolute;
-  left: 0;
-  top: 0;
-  transform-origin: 0 0;
-  will-change: transform;
-  opacity: 0;
-  transition: opacity .5s ease;
+  inset: -40px;
+  background: url("images/Final%20Images/map.jpg") repeat;
+  filter: blur(20px) brightness(.7);
+  transition: filter .5s ease;
   pointer-events: none;
 }
-.terreno img { position: absolute; display: block; max-width: none; }
-.mapa.longe::before, .mapa.longe .terreno { opacity: 1; }
+.mapa.longe .terreno { filter: blur(0) brightness(1); }
 .mapa.a-arrastar { cursor: grabbing; }
-#grelha {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-  pointer-events: none;
-  transition: opacity .5s ease;
-}
-/* a grelha só aparece quando se vê o conteúdo das caixas (acima de 25%), ao mesmo tempo que as imagens desvanecem */
-.mapa.longe #grelha { opacity: 0; }
 .mundo {
   position: absolute;
   left: 0;
@@ -165,14 +147,16 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--contorno);
   background: var(--caixa);
   transition: border-color .5s ease, background-color .5s ease;
 }
 /* De longe (conteúdo escondido) a caixa fica sem contorno nem fundo: só a imagem */
 .mapa.longe .regiao { border-color: transparent; background-color: transparent; }
+/* de longe, clicar numa caixa aproxima até 100% */
+.mapa.longe .regiao { cursor: zoom-in; }
 .regiao.nova { animation: acender .7s ease-out; }
-@keyframes acender { from { background: var(--nova); } to { background: var(--caixa); } }
+@keyframes acender { from { background: var(--cor-cat, var(--nova)); } to { background: var(--caixa); } }
 
 .cabeca {
   flex: none;
@@ -190,7 +174,8 @@ body {
   overflow: hidden;
   font-variant-numeric: tabular-nums;
 }
-.cabeca .num { color: var(--ink); font-weight: 600; }
+.cabeca .num { color: var(--cor-cat, var(--ink)); font-weight: 600; }
+.cabeca .cat { color: var(--cor-cat, var(--muted)); }
 .cabeca .origem { overflow: hidden; text-overflow: ellipsis; text-transform: none; letter-spacing: 0; }
 
 .texto {
@@ -201,8 +186,10 @@ body {
   font-size: 14px;
   line-height: calc(var(--cell-h) / 2);
 }
-.texto p { margin: 0 0 calc(var(--cell-h) / 2); max-width: 62ch; }
+.texto p { margin: 0 0 calc(var(--cell-h) / 2); max-width: 62ch; font-family: var(--texto-font); }
 .texto p:last-child { margin-bottom: 0; }
+/* aspas no início do parágrafo ficam fora da margem; a Xanh Mono é monoespaçada, por isso 1ch é a largura exata das aspas */
+.texto p.aspa { text-indent: -1ch; }
 
 /* Figuras: por baixo do texto; em caixas largas, ao lado */
 .texto .fig { margin: 0 0 calc(var(--cell-h) / 2); max-width: 62ch; }
@@ -213,15 +200,26 @@ body {
   max-height: calc(var(--cell-h) * 8);
   object-fit: contain;
   object-position: left top;
-  filter: url(#neon); /* verde néon chapado (filtro definido no index.html) */
+  /* tingida com a cor da categoria (filtros definidos no index.html) */
 }
 /* o SVG só guarda o filtro; não ocupa espaço */
 .filtros { position: absolute; width: 0; height: 0; overflow: hidden; }
-.neon-cor { flood-color: var(--neon); }
+.regiao[data-cat="resource-exploitation"] { --cor-cat: var(--cat-resource-exploitation); }
+.regiao[data-cat="registry-of-power"] { --cor-cat: var(--cat-registry-of-power); }
+.regiao[data-cat="web"] { --cor-cat: var(--cat-web); }
+.regiao[data-cat="data-objects"] { --cor-cat: var(--cat-data-objects); }
+.regiao[data-cat="resource-exploitation"] .fig img { filter: url(#tinta-resource-exploitation); }
+.regiao[data-cat="registry-of-power"] .fig img { filter: url(#tinta-registry-of-power); }
+.regiao[data-cat="web"] .fig img { filter: url(#tinta-web); }
+.regiao[data-cat="data-objects"] .fig img { filter: url(#tinta-data-objects); }
+.cor-resource-exploitation { flood-color: var(--cat-resource-exploitation); }
+.cor-registry-of-power { flood-color: var(--cat-registry-of-power); }
+.cor-web { flood-color: var(--cat-web); }
+.cor-data-objects { flood-color: var(--cat-data-objects); }
 .texto .fig figcaption {
   margin-top: 6px;
   font-size: 11px;
-  line-height: 1.4;
+  line-height: 1.15;
   color: var(--muted);
 }
 @container (min-width: 640px) {
@@ -238,47 +236,57 @@ body {
 
 .texto a {
   color: inherit;
+  font-style: italic; /* Xanh Mono itálica (carregada no index.html) */
   text-decoration: underline;
   text-decoration-color: var(--rule);
   text-underline-offset: 3px;
   cursor: pointer;
   border-radius: 2px;
+  /* o fundo do hover sobe de baixo para cima (a partir do sublinhado) */
+  background: linear-gradient(var(--hover), var(--hover)) 0 100% / 100% 0% no-repeat;
+  transition: background-size .25s ease, color .25s ease, opacity .2s ease;
 }
-.texto a:hover { background: var(--hover); color: var(--hover-texto); }
+.texto a:hover { background-size: 100% 100%; color: var(--hover-texto); }
 .texto a:focus-visible { outline: 2px solid var(--rule); outline-offset: 1px; }
-/* ligação já aberta numa caixa vizinha: esbatida, como o botão + já usado */
-.texto a { transition: opacity .2s ease; }
-.texto a.aberto { background: var(--aberta); color: var(--aberta-texto); opacity: .35; }
+/* ligação já aberta numa caixa vizinha: esbatida */
+.texto a.aberto { background-color: var(--aberta); color: var(--aberta-texto); opacity: .35; }
+/* já usada: sem efeito de hover */
+.texto a.aberto:hover { background-size: 100% 0%; color: var(--aberta-texto); }
 
-/* Botão + por baixo do texto: abre a citação seguinte (substitui o [n] no fim do parágrafo) */
+/* Botão [Extract] por baixo do texto: abre a citação seguinte (substitui o [n] no fim do parágrafo).
+   Ao passar o rato ganha um + e inverte: fundo --botao, texto da cor da caixa */
 .acoes { display: flex; gap: 8px; }
-.mais {
+.extrair {
   all: unset;
   box-sizing: border-box;
-  width: var(--cell-h);
-  height: var(--cell-h);
-  border: 1px solid var(--botao);
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: var(--botao);
+  padding: 0 3px;
+  margin-left: -3px; /* o [ fica alinhado com o texto; a folga só serve o fundo do hover */
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: calc(var(--cell-h) / 2);
+  white-space: nowrap;
+  text-transform: uppercase;
   color: var(--botao-texto);
   cursor: pointer;
-  transition: opacity .2s ease;
+  /* o fundo do hover é um gradiente que cresce da esquerda para a direita */
+  background: linear-gradient(var(--botao), var(--botao)) 0 0 / 0% 100% no-repeat;
+  transition: background-size .25s ease, color .25s ease;
 }
-/* o + em SVG fica centrado ao píxel e com traço igual ao do círculo (1px) */
-.mais svg {
-  width: 16px;
-  height: 16px;
-  fill: none;
-  stroke: currentColor;
-  overflow: visible;
+/* o + entra a deslizar: a largura abre de 0 e a opacidade sobe */
+.extrair .seta {
+  display: inline-block;
+  max-width: 0;
+  overflow: hidden;
+  vertical-align: bottom;
+  white-space: pre;
+  opacity: 0;
+  transition: max-width .25s ease, opacity .25s ease;
 }
-.mais path { stroke-width: 1px; }
-.mais:hover { background: var(--hover); border-color: var(--hover); }
-.mais:focus-visible { outline: 2px solid var(--rule); outline-offset: 2px; }
-/* já aberta: o botão continua a funcionar (leva à caixa), mas fica esbatido */
-.mais.aberto { opacity: .35; }
+.extrair:hover { background-size: 100% 100%; color: var(--caixa); }
+.extrair:hover .seta { max-width: 2em; opacity: 1; }
+.extrair:focus-visible { outline: 2px solid var(--rule); outline-offset: 2px; }
+/* depois de clicado, o botão desaparece (a caixa que abriu continua acessível pelas ligações e pelo mapa) */
+.extrair.aberto { display: none; }
 
 /* De longe, cada caixa mostra só a sua imagem de fundo */
 .mapa.longe .cabeca, .mapa.longe .texto { visibility: hidden; }
