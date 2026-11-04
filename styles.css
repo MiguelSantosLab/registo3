@@ -234,6 +234,16 @@ body {
   -webkit-user-select: none;
 }
 .mundo.movendo { will-change: transform; }
+/* Título: fica entre o terreno e as caixas, fora do mundo; a cada frame o script dá-lhe a posição
+   e o tamanho no ecrã que teria no mundo (assim o SVG é desenhado ao tamanho real, sem piscar).
+   Só aparece entre 0% e 1% de zoom; acima disso desvanece */
+.titulo {
+  position: absolute;
+  pointer-events: none;
+  transition: opacity .4s ease;
+}
+.titulo.escondido { opacity: 0; }
+.titulo-svg { display: block; overflow: visible; }
 /* Área invisível onde se mede a altura que cada caixa precisa */
 .medidor {
   position: absolute;

@@ -4,7 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Artificial intelligence depends on the exploitation of finite material resources. Its use lies primarily with a state and corporate registry of power, which relies on it to consolidate its dominance. It is the structure of the web that allows it to exist and circulate, with AI being used to create and maintain data extraction models that serve to enrich systems, but also to inspect, measure, and control.">
     <title>Soil & Soul in the Age of Control</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Xanh+Mono:ital@0;1&display=swap">
@@ -47,7 +49,7 @@
                 <span class="zoom" id="zoom"></span>
                 <button class="acao" id="menos" type="button" title="Zoom out (−)" aria-label="Zoom out">−</button>
                 <button class="acao" id="mais" type="button" title="Zoom in (+)" aria-label="Zoom in">+</button>
-                <button class="acao" id="centrar" type="button" title="Center and zoom out to 0% (0)">Center</button>
+                <button class="acao" id="centrar" type="button" title="Back to the starting view (0)">Center</button>
                 <button class="acao" id="desfazer" type="button" title="Undo the last opened box (Esc)">Undo</button>
                 <button class="acao" id="repor" type="button" title="Start over from the first box">Reset</button>
                 <button class="acao sobre-btn" id="sobre-btn" type="button" title="Information" aria-label="Information" aria-expanded="false" aria-controls="sobre">
@@ -99,6 +101,21 @@
         <main class="mapa longe" id="mapa">
             <!-- Terreno: map.jpg repetido em todas as direções, alinhado com o mundo (arrasta-se e amplia com as caixas) -->
             <div class="terreno" id="terreno" aria-hidden="true"></div>
+            <!-- Título (cópia de title.svg, em linha para usar a Xanh Mono da página): só se vê entre 0% e 1% de zoom,
+                 com a primeira caixa no espaço entre "Soil & Soul" e "in the age" -->
+            <div class="titulo" id="titulo" role="img" aria-label="Soil &amp; Soul in the age of control">
+            <svg class="titulo-svg" width="100%" height="100%" aria-hidden="true" viewBox="0 0 1185 699" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+            <g transform="matrix(1,0,0,1,-367.560757,-278.556173)">
+            <g transform="matrix(0.745591,0,0,0.745591,251.534664,203.398296)">
+            <text x="134.431px" y="321.482px" style="font-family:'XanhMono-Regular', 'Xanh Mono', monospace;font-size:294.238px;fill:rgb(255,0,3);">Soil &amp; Soul</text>
+            </g>
+            <g transform="matrix(0.735816,0,0,0.735816,269.081004,536.244712)">
+            <text x="207.991px" y="321.482px" style="font-family:'XanhMono-Regular', 'Xanh Mono', monospace;font-size:294.238px;fill:rgb(255,0,3);">in the age</text>
+            <text x="207.991px" y="596.326px" style="font-family:'XanhMono-Regular', 'Xanh Mono', monospace;font-size:294.238px;fill:rgb(255,0,3);">of control</text>
+            </g>
+            </g>
+            </svg>
+            </div>
             <div class="mundo" id="mundo"></div>
         </main>
     </div>

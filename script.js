@@ -6,6 +6,7 @@ const mapa = document.getElementById('mapa');
 const topo = document.querySelector('.top');
 const mundo = document.getElementById('mundo');
 const terreno = document.getElementById('terreno');
+const tituloEl = document.getElementById('titulo');
 const info = document.getElementById('info');
 const ramos = document.getElementById('ramos');
 const zoomInfo = document.getElementById('zoom');
@@ -58,12 +59,13 @@ const elementos = new Map(); // id da caixa -> elemento
 
 // Imagens de fundo (vistas de longe), por categoria; cada caixa nova recebe uma ao acaso da sua categoria,
 // diferente da caixa de onde veio quando houver alternativa
-const piscinas = (de, ate) => Array.from({ length: ate - de + 1 }, (_, i) => `images/Final%20Images/psicina${de + i}.jpg`);
+// só PNG: images/Final Images/piscinaN.png (ainda não há piscina3.png nem piscina10.png)
+const piscinas = (...ns) => ns.map(n => `images/Final%20Images/piscina${n}.png`);
 const FUNDOS = {
-  "resource-exploitation": piscinas(1, 3),
+  "resource-exploitation": piscinas(1, 2, 11),
   "registry-of-power": piscinas(4, 5),
   "web": piscinas(6, 7),
-  "data-objects": piscinas(8, 10),
+  "data-objects": piscinas(8, 9),
 };
 function fundoAoAcaso(item, evitar) {
   const todas = FUNDOS[itens[item].cat] || Object.values(FUNDOS).flat();
@@ -376,6 +378,14 @@ function aplicarCamara() {
   topo.classList.toggle('escondida', cam.z < ZOOM_LONGE);
   if (cam.z < ZOOM_LONGE && !sobre.hidden) mostrarSobre(false);
   zoomInfo.textContent = `${percentagem(cam.z)}%`;
+  tituloEl.classList.toggle('escondido', percentagem(cam.z) > 1);
+  if (titulo) {
+    // posição e tamanho do título no ecrã, como se estivesse no mundo
+    Object.assign(tituloEl.style, {
+      left: `${cam.x + titulo.x * cam.z}px`, top: `${cam.y + titulo.y * cam.z}px`,
+      width: `${titulo.w * cam.z}px`, height: `${titulo.h * cam.z}px`,
+    });
+  }
 }
 
 function atualizarEstado() {
@@ -522,8 +532,9 @@ function desfazer() {
 
 function estadoNovo() {
   const w = larguraBase(primeiro);
+  // a primeira caixa começa sempre com a piscina1
   return {
-    caixas: [{ id: proxId++, item: primeiro, origem: null, x: 0, y: 0, w, h: alturaMin(primeiro, w), fundo: fundoAoAcaso(primeiro), filtro: filtroAoAcaso() }],
+    caixas: [{ id: proxId++, item: primeiro, origem: null, x: 0, y: 0, w, h: alturaMin(primeiro, w), fundo: piscinas(1)[0], filtro: filtroAoAcaso() }],
     historico: [], // por cada caixa aberta: [caixa, tamanho anterior] das que foram esticadas
   };
 }
@@ -531,7 +542,7 @@ function estadoNovo() {
 function repor() {
   estado = estadoNovo();
   desenhar();
-  enquadrar(true, ZOOM_MIN);
+  vistaTitulo(true);
 }
 
 // ---------- Interação: arrastar (botão esquerdo ou do meio), zoom, pinça ----------
@@ -658,14 +669,15 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { if (!sobre.hidden) mostrarSobre(false); else desfazer(); }
   else if (e.key === '+' || e.key === '=') zoomCentro(1.25);
   else if (e.key === '-') zoomCentro(0.8);
-  else if (e.key === '0') enquadrar(true, ZOOM_MIN);
+  else if (e.key === '0') btnCentrar.click();
 });
 
 btnDesfazer.addEventListener('click', desfazer);
 btnRepor.addEventListener('click', repor);
 btnMais.addEventListener('click', () => zoomCentro(1.25));
 btnMenos.addEventListener('click', () => zoomCentro(0.8));
-btnCentrar.addEventListener('click', () => enquadrar(true, ZOOM_MIN)); // centra a forma no zoom 0%
+// volta à vista inicial: a primeira caixa no mesmo sítio do ecrã que ao abrir o site (título centrado, zoom 0%)
+btnCentrar.addEventListener('click', () => vistaTitulo(true));
 
 // Painel de informação: o botão (i) abre-o e passa a X, que o fecha; Esc e esconder o topo também fecham
 function mostrarSobre(abrir) {
@@ -695,11 +707,36 @@ function colocarTerreno() {
   azulejo = { x: cx - w / 2, y: cy - h / 2, w, h };
 }
 
+// Título (title.svg, em linha no index.html): está colocado no mundo à volta da primeira caixa,
+// mas é desenhado fora dele, ao tamanho do ecrã (ver aplicarCamara).
+// TITULO_FOCO é o ponto do título (em fração da largura/altura do viewBox 1185x699) onde fica o centro
+// da primeira caixa: o espaço entre "Soil & Soul" e "in the age". Afinar aqui se o SVG mudar.
+const TITULO_PROP = 699 / 1185;
+const TITULO_FOCO = { x: 0.5, y: 0.36 };
+let titulo = null; // { x, y, w, h } em px do mundo
+function colocarTitulo() {
+  const W = mapa.clientWidth, H = mapa.clientHeight;
+  // no zoom 0% o título ocupa até 80% da largura e da altura do ecrã
+  const w = Math.min(W * 0.8, H * 0.8 / TITULO_PROP) / ZOOM_MIN, h = w * TITULO_PROP;
+  const c = estado.caixas[0];
+  const cx = (c.x + c.w / 2) * CW, cy = (c.y + c.h / 2) * CH;
+  titulo = { x: cx - TITULO_FOCO.x * w, y: cy - TITULO_FOCO.y * h, w, h };
+}
+// Vista inicial: zoom 0% com o título centrado no ecrã (e a primeira caixa no meio do texto)
+function vistaTitulo(animar = true) {
+  colocarTitulo();
+  const W = mapa.clientWidth, H = mapa.clientHeight, z = ZOOM_MIN;
+  const alvo = { z, x: W / 2 - (titulo.x + titulo.w / 2) * z, y: H / 2 - (titulo.y + titulo.h / 2) * z };
+  cancelAnimationFrame(voo);
+  pararZoom();
+  if (animar) voarPara(alvo); else { Object.assign(cam, alvo); aplicarCamara(); }
+}
+
 // a Xanh Mono tem de estar carregada antes de medir a altura das caixas
 const letraPronta = Promise.all([document.fonts.load('14px "Xanh Mono"'), document.fonts.load('italic 14px "Xanh Mono"')]).catch(() => {}).then(() => document.fonts.ready);
 Promise.all([carregarImagens(), letraPronta, terrenoPronto]).then(() => {
   estado = estadoNovo();
   colocarTerreno();
   desenhar();
-  enquadrar(false, ZOOM_MIN);
+  vistaTitulo(false);
 });
