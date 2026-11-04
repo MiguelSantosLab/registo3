@@ -2,10 +2,10 @@ Está em falta:
 
 1 X - barra de navegação (invisivel em zoom out) (em inglês) (botão de info [i])
 
-2- novas imagens das piscinas
+2 X - novas imagens das piscinas
 
-3- title card inicial - título: Soil and Soul in the age of control
+3 X- title card inicial - título: Soil and Soul in the age of control
 
-4- zona de info/referencias/citaçoes
+4 X- zona de info/referencias/citaçoes
 
 5 X- mudar os botões de extraction para ficar com o + sempre visivel
