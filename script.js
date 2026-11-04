@@ -3,15 +3,19 @@ const ZOOM_MIN = 0.12, ZOOM_MAX = 2.5;
 // abaixo de 25% (na escala do topo) as caixas mostram só o número, com a imagem de fundo
 const ZOOM_LONGE = ZOOM_MIN + 0.1 * (ZOOM_MAX - ZOOM_MIN);
 const mapa = document.getElementById('mapa');
+const topo = document.querySelector('.top');
 const mundo = document.getElementById('mundo');
 const terreno = document.getElementById('terreno');
 const info = document.getElementById('info');
+const ramos = document.getElementById('ramos');
 const zoomInfo = document.getElementById('zoom');
 const btnDesfazer = document.getElementById('desfazer');
 const btnRepor = document.getElementById('repor');
 const btnMais = document.getElementById('mais');
 const btnMenos = document.getElementById('menos');
 const btnCentrar = document.getElementById('centrar');
+const btnSobre = document.getElementById('sobre-btn');
+const sobre = document.getElementById('sobre');
 const reduzido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const eCitacao = txt => /^\[\d+\]$/.test(txt.trim());
@@ -102,7 +106,7 @@ function criarElemento(caixa) {
     b.type = 'button';
     b.className = 'extrair';
     b.dataset.ancora = i;
-    b.innerHTML = '[Extract<span class="seta" aria-hidden="true"> +</span>]';
+    b.textContent = '[Extract +]';
     b.setAttribute('aria-label', `Abrir a citação ${it.ancoras[i].alvo}`);
     acoes.appendChild(b);
     a.remove();
@@ -368,12 +372,20 @@ function aplicarCamara() {
   clearTimeout(paragem);
   paragem = setTimeout(() => mundo.classList.remove('movendo'), 150);
   mapa.classList.toggle('longe', cam.z < ZOOM_LONGE);
+  // a navegação do topo só aparece quando o conteúdo das caixas se vê
+  topo.classList.toggle('escondida', cam.z < ZOOM_LONGE);
+  if (cam.z < ZOOM_LONGE && !sobre.hidden) mostrarSobre(false);
   zoomInfo.textContent = `${percentagem(cam.z)}%`;
 }
 
 function atualizarEstado() {
   const n = estado.caixas.length;
-  info.textContent = `${n} ${n === 1 ? 'caixa' : 'caixas'}`;
+  info.textContent = `${n} ${n === 1 ? 'box' : 'boxes'}`;
+  // ramificações possíveis: ligações das caixas abertas que ainda não foram abertas
+  const abertas = new Set(estado.caixas.filter(c => c.origem).map(c => `${c.origem.de}:${c.origem.ancora}`));
+  let r = 0;
+  for (const c of estado.caixas) itens[c.item].ancoras.forEach((_, i) => { if (!abertas.has(`${c.id}:${i}`)) r++; });
+  ramos.textContent = `${r} ${r === 1 ? 'ramification' : 'ramifications'}`;
   btnDesfazer.disabled = n <= 1;
   btnRepor.disabled = n <= 1;
 }
@@ -595,11 +607,33 @@ mapa.addEventListener('pointerup', largar);
 mapa.addEventListener('pointercancel', largar);
 mundo.addEventListener('dragstart', e => e.preventDefault());
 
+// Trackpad vs. rato: o rato dá passos fixos (wheelDelta múltiplo de 120, só na vertical);
+// o trackpad dá deltas pequenos/fracionários e também horizontais. Depois de um evento de trackpad,
+// o resto do gesto (400 ms) continua a contar como trackpad, para não alternar a meio
+let ultimoTrackpad = -Infinity;
+function eTrackpad(e) {
+  if (e.deltaMode !== 0) return false;
+  const wd = e.wheelDeltaY;
+  const pista = e.deltaX !== 0 || !Number.isInteger(e.deltaY) || (wd !== undefined && wd !== 0 && wd % 120 !== 0);
+  const agora = performance.now();
+  if (pista) ultimoTrackpad = agora;
+  return agora - ultimoTrackpad < 400;
+}
+
+// Roda do rato e pinça (ctrlKey) fazem zoom; dois dedos no trackpad arrastam o mapa
 mapa.addEventListener('wheel', e => {
   e.preventDefault();
   const p = local(e);
+  if (e.ctrlKey) { zoomPor(p.x, p.y, Math.exp(-e.deltaY * 0.01)); return; }
+  if (eTrackpad(e)) {
+    cancelAnimationFrame(voo);
+    cam.x -= e.deltaX;
+    cam.y -= e.deltaY;
+    aplicarCamara();
+    return;
+  }
   const d = e.deltaY * (e.deltaMode === 1 ? 33 : 1);
-  zoomPor(p.x, p.y, Math.exp(-d * (e.ctrlKey ? 0.01 : 0.0015)));
+  zoomPor(p.x, p.y, Math.exp(-d * 0.0015));
 }, { passive: false });
 
 mapa.addEventListener('click', e => {
@@ -621,7 +655,7 @@ mapa.addEventListener('click', e => {
 const zoomCentro = k => zoomPor(mapa.clientWidth / 2, mapa.clientHeight / 2, k);
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') desfazer();
+  if (e.key === 'Escape') { if (!sobre.hidden) mostrarSobre(false); else desfazer(); }
   else if (e.key === '+' || e.key === '=') zoomCentro(1.25);
   else if (e.key === '-') zoomCentro(0.8);
   else if (e.key === '0') enquadrar(true, ZOOM_MIN);
@@ -632,6 +666,16 @@ btnRepor.addEventListener('click', repor);
 btnMais.addEventListener('click', () => zoomCentro(1.25));
 btnMenos.addEventListener('click', () => zoomCentro(0.8));
 btnCentrar.addEventListener('click', () => enquadrar(true, ZOOM_MIN)); // centra a forma no zoom 0%
+
+// Painel de informação: o botão (i) abre-o e passa a X, que o fecha; Esc e esconder o topo também fecham
+function mostrarSobre(abrir) {
+  sobre.hidden = !abrir;
+  btnSobre.setAttribute('aria-expanded', String(abrir));
+  btnSobre.setAttribute('aria-label', abrir ? 'Close information' : 'Information');
+  btnSobre.title = abrir ? 'Close (Esc)' : 'Information';
+  btnSobre.classList.toggle('ativo', abrir);
+}
+btnSobre.addEventListener('click', () => mostrarSobre(sobre.hidden));
 
 
 // Terreno: um azulejo de map.jpg centrado na primeira caixa (no zoom mínimo, 1.6x maior do que o ecrã),

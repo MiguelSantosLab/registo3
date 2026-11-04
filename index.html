@@ -40,15 +40,59 @@
         </filter>
     </svg>
     <div class="sheet">
-        <header class="top">
+        <header class="top escondida">
             <div class="estado">
                 <span class="info" id="info" aria-live="polite"></span>
+                <span class="info ramos" id="ramos" title="Links in the open boxes that have not been opened yet"></span>
                 <span class="zoom" id="zoom"></span>
-                <button class="acao" id="menos" type="button" title="Afastar (−)" aria-label="Afastar">−</button>
-                <button class="acao" id="mais" type="button" title="Aproximar (+)" aria-label="Aproximar">+</button>
-                <button class="acao" id="centrar" type="button" title="Centrar e afastar até 0% (0)">Centrar</button>
-                <button class="acao" id="desfazer" type="button" title="Desfazer a última abertura (Esc)">Desfazer</button>
-                <button class="acao" id="repor" type="button">Repor</button>
+                <button class="acao" id="menos" type="button" title="Zoom out (−)" aria-label="Zoom out">−</button>
+                <button class="acao" id="mais" type="button" title="Zoom in (+)" aria-label="Zoom in">+</button>
+                <button class="acao" id="centrar" type="button" title="Center and zoom out to 0% (0)">Center</button>
+                <button class="acao" id="desfazer" type="button" title="Undo the last opened box (Esc)">Undo</button>
+                <button class="acao" id="repor" type="button" title="Start over from the first box">Reset</button>
+                <button class="acao sobre-btn" id="sobre-btn" type="button" title="Information" aria-label="Information" aria-expanded="false" aria-controls="sobre">
+                    <svg class="icone-info" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="8" cy="4.6" r="0.9" fill="currentColor"/><path d="M8 7v5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                    <svg class="icone-fechar" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                </button>
+            </div>
+            <!-- Painel de informação: abre e fecha com clique no botão (i)/(X) e ocupa o ecrã todo, topo incluído -->
+            <div class="sobre" id="sobre" hidden>
+                <section class="sobre-descricao">
+                    <p>Artificial intelligence depends on the exploitation of finite material resources. Its use lies primarily with a state and corporate registry of power, which relies on it to consolidate its dominance. It is the structure of the web that allows it to exist and circulate, with AI being used to create and maintain data extraction models that serve to enrich systems, but also to inspect, measure, and control.</p>
+                </section>
+                <section class="sobre-referencias">
+                    <p class="sobre-titulo">References</p>
+                    <ul>
+                        <li>Crawford, K. (2021). <i>Atlas of AI: Power, politics, and the planetary costs of artificial intelligence</i>. Yale University Press.</li>
+                        <li>Chun, W. H. K. (2021). <i>Discriminating data: Correlation, neighborhoods, and the new politics of recognition</i>. MIT Press.</li>
+                        <li>Berners-Lee, T., Cailliau, R., Luotonen, A., Nielsen, H. F., &amp; Secret, A. (2003). The World-Wide Web. In N. Wardrip-Fruin &amp; N. Montfort (Eds.), <i>The new media reader</i> (pp. 791–798). MIT Press. (Original work published 1994)</li>
+                        <li>Agre, P. E. (2003). Surveillance and capture: Two models of privacy. In N. Wardrip-Fruin &amp; N. Montfort (Eds.), <i>The new media reader</i> (pp. 737–760). MIT Press. (Original work published 1994)</li>
+                    </ul>
+                    <p class="sobre-titulo">Notes</p>
+                    <ol class="notas">
+                        <li><span class="nota-num">[1]</span> Crawford, <i>Atlas of AI</i>, sec. “What Is AI? Neither Artificial nor Intelligent,” par. 3.</li>
+                        <li><span class="nota-num">[2]</span> Crawford, <i>Atlas of AI</i>, sec. “Topographies of Computation,” par. 3.</li>
+                        <li><span class="nota-num">[3]</span> Crawford, <i>Atlas of AI</i>, sec. “Topographies of Computation,” par. 10.</li>
+                        <li><span class="nota-num">[4]</span> Chun, <i>Discriminating Data</i>, par. 5.</li>
+                        <li><span class="nota-num">[5]</span> Crawford, <i>Atlas of AI</i>, sec. “Potemkin AI and the Mechanical Turks,” par. 1.</li>
+                        <li><span class="nota-num">[6]</span> Crawford, <i>Atlas of AI</i>, sec. “Topographies of Computation,” par. 10.</li>
+                        <li><span class="nota-num">[7]</span> Chun, <i>Discriminating Data</i>, par. 1.</li>
+                        <li><span class="nota-num">[8]</span> Crawford, <i>Atlas of AI</i>, sec. “Enter Project Maven,” par. 7.</li>
+                        <li><span class="nota-num">[9]</span> Crawford, “The Outsourced State,” par. 10.</li>
+                        <li><span class="nota-num">[10]</span> Berners-Lee et al., “World-Wide Web,” 792.</li>
+                        <li><span class="nota-num">[11]</span> Berners-Lee et al., “World-Wide Web,” 794.</li>
+                        <li><span class="nota-num">[12]</span> Agre, “Surveillance and Capture,” 748.</li>
+                        <li><span class="nota-num">[13]</span> Agre, “Surveillance and Capture,” 748.</li>
+                        <li><span class="nota-num">[14]</span> Agre, “Surveillance and Capture,” 743.</li>
+                        <li><span class="nota-num">[15]</span> Agre, “Surveillance and Capture,” 744.</li>
+                        <li><span class="nota-num">[16]</span> Agre, “Surveillance and Capture,” 747.</li>
+                        <li><span class="nota-num">[17]</span> Agre, “Surveillance and Capture,” 754.</li>
+                        <li><span class="nota-num">[18]</span> Agre, “Surveillance and Capture,” 747.</li>
+                        <li><span class="nota-num">[19]</span> Agre, “Surveillance and Capture,” 741.</li>
+                        <li><span class="nota-num">[20]</span> Agre, “Surveillance and Capture,” 742.</li>
+                    </ol>
+                </section>
+                <p class="sobre-autores">Miguel Santos &amp; Ricardo Paulo, 2026</p>
             </div>
         </header>
         <!-- Mapa: as caixas vivem no "mundo", que se arrasta e amplia -->
