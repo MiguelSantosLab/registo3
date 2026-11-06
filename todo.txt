@@ -1,11 +1,24 @@
 Está em falta:
 
-1 X - barra de navegação (invisivel em zoom out) (em inglês) (botão de info [i])
+cor:
+fundo escuro 900 azul
+piscinas fundo 700 ou 800 azul (ver contraste)
+caixa inicial à base de azul (gradient)
+Links texto (400 azul)
+Stroke das caixas (azul gradient rgb)
 
-2 X - novas imagens das piscinas
+Imagens:
+Manter um filtro azul sobre todas as imagens
 
-3 X- title card inicial - título: Soil and Soul in the age of control
+Letra:
+Aumentar e usar sanserif nos textos
+Títulos usar xhan mono
 
-4 X- zona de info/referencias/citaçoes
+Funcionalidade:
+Limitar zoom
+manter os botões todos
+nav bar sem stroke (baixar a opacidade?)
 
-5 X- mudar os botões de extraction para ficar com o + sempre visivel
+Info panel:
+Mudar a cor (neutro)
+Retirar as citações numeradas (notes)
