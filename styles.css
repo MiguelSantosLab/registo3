@@ -18,30 +18,29 @@
   */
 :root {
   --paper: #fbfbfb;
-  --caixa: #1D1816;   /* fundo das caixas */
-  --contorno: #5B4F4B; /* contorno das caixas */
+  --caixa: #1d4ed8;   /* fundo das caixas */
+  --topo: #1D1816;    /* fundo da faixa de topo */
+  --contorno: #fbfbfb; /* contorno das caixas */
   --grid: #0000ff;
   --rule: #F3F1F1;
   --ink: #F3F1F1;
   --muted: #787878;
   --hover: #F3F1F1;
   --hover-texto: #1D1816; /* texto sobre o fundo de --hover */
-  --nova: #0000ff;    /* destaque de uma caixa acabada de abrir, só para caixas sem categoria (as outras usam a cor da categoria) */
   --aberta: #1D1816;  /* fundo das palavras ligadas já abertas */
   --aberta-texto: #ffffff; /* texto das palavras ligadas já abertas */
-  --botao: #F3F1F1;   /* fundo do [EXTRACT +] ao passar o rato */
   --botao-texto: #F3F1F1; /* texto do [Extract] */
-  --info-fundo: #FF0003; /* fundo do painel de informação (i) */
+  --info-fundo: #fbfbfb; /* fundo do painel de informação (i) */
   --info-texto: #1D1816; /* texto do painel de informação */
-  /* cor de cada categoria: título da caixa e filtro das figuras */
-  --cat-resource-exploitation: #6666FF;
-  --cat-registry-of-power: #1AFFFF;
-  --cat-web: #53FF3F;
-  --cat-data-objects: #FFFFB1;
+  --cat: #60a5fa;     /* número e nome da categoria no topo das caixas (igual para todas) */
+  --tinta: #2563eb;   /* cor do filtro sobre todas as figuras */
+  --link: #60a5fa;    /* palavras ligadas: texto, sublinhado e destaque ao passar o rato */
+  --link-texto: #fbfbfb; /* texto sobre o destaque --link */
   --cell-w: 35px;
   --cell-h: 35px;
   --font: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --texto-font: "Xanh Mono", ui-monospace, monospace; /* parágrafos das caixas (Google Fonts, ligada no index.html) */
+  --texto-font: "Xanh Mono", ui-monospace, monospace; /* títulos: categoria das caixas, [Extract +], painel de informação (Google Fonts, ligada no index.html) */
+  --legenda: #60a5fa; /* legendas das figuras */
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   color-scheme: light;
 }
@@ -71,7 +70,7 @@ body {
   z-index: 2;
   border-bottom: 1px solid var(--contorno);
   min-width: 0;
-  background: var(--caixa);
+  background: var(--topo);
   transition: opacity .5s ease, visibility 0s linear 0s;
 }
 .top.escondida {
@@ -146,7 +145,7 @@ body {
   color: var(--info-texto);
 }
 .sobre[hidden] { display: none; }
-/* a descrição fica fixa à esquerda; só as referências e notas, à direita, se deslocam */
+/* a descrição fica fixa à esquerda; só as referências, à direita, se deslocam */
 .sobre-descricao { align-self: start; }
 .sobre-referencias {
   min-height: 0;
@@ -187,12 +186,6 @@ body {
 /* referências com recuo pendente (APA) */
 .sobre-referencias li { padding-left: 2em; text-indent: -2em; line-height: 1.45; }
 .sobre-referencias li + li { margin-top: 12px; }
-/* notas numeradas por baixo das referências: o [n] fica pendurado à esquerda */
-.sobre-referencias ul + .sobre-titulo { margin-top: 40px; }
-.sobre-referencias .notas { margin: 0; padding: 0; list-style: none; max-width: 40em; }
-.sobre-referencias .notas li { padding-left: 3em; text-indent: -3em; }
-.sobre-referencias .notas li + li { margin-top: 6px; }
-.nota-num { display: inline-block; width: 3em; text-indent: 0; font-variant-numeric: tabular-nums; }
 @media (max-width: 640px) {
   /* em ecrãs estreitos as colunas empilham-se e o painel todo desloca-se */
   .sobre { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; align-content: start; padding: calc(var(--cell-h) + 24px) 16px 24px; gap: 32px; overflow-y: auto; }
@@ -270,7 +263,7 @@ body {
 /* de longe, clicar numa caixa aproxima até 100% */
 .mapa.longe .regiao { cursor: zoom-in; }
 .regiao.nova { animation: acender .7s ease-out; }
-@keyframes acender { from { background: var(--cor-cat, var(--nova)); } to { background: var(--caixa); } }
+@keyframes acender { from { background: var(--cat); } to { background: var(--caixa); } }
 
 .cabeca {
   flex: none;
@@ -279,8 +272,8 @@ body {
   align-items: center;
   gap: 10px;
   padding: 0 14px 0 var(--cell-w);
-  font-family: var(--mono);
-  font-size: 10px;
+  font-family: var(--texto-font);
+  font-size: 11px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--muted);
@@ -288,22 +281,22 @@ body {
   overflow: hidden;
   font-variant-numeric: tabular-nums;
 }
-.cabeca .num { color: var(--cor-cat, var(--ink)); font-weight: 600; }
-.cabeca .cat { color: var(--cor-cat, var(--muted)); }
-.cabeca .origem { overflow: hidden; text-overflow: ellipsis; text-transform: none; letter-spacing: 0; }
+.cabeca .num { color: var(--cat); font-weight: 600; }
+.cabeca .cat { color: var(--cat); }
+.cabeca .origem { color: var(--cat); overflow: hidden; text-overflow: ellipsis; text-transform: none; letter-spacing: 0; }
 
 .texto {
   flex: 1;
   min-height: 0;
   overflow: hidden;
   padding: 0 var(--cell-w) calc(var(--cell-h) / 2);
-  font-size: 14px;
+  font-size: 16px;
   line-height: calc(var(--cell-h) / 2);
 }
-.texto p { margin: 0 0 calc(var(--cell-h) / 2); max-width: 62ch; font-family: var(--texto-font); }
+.texto p { margin: 0 0 calc(var(--cell-h) / 2); max-width: 62ch; font-family: var(--font); line-height: 1.35; }
 .texto p:last-child { margin-bottom: 0; }
-/* aspas no início do parágrafo ficam fora da margem; a Xanh Mono é monoespaçada, por isso 1ch é a largura exata das aspas */
-.texto p.aspa { text-indent: -1ch; }
+/* aspas no início do parágrafo ficam fora da margem (≈ largura das aspas em Helvetica/Arial) */
+.texto p.aspa { text-indent: -0.42em; }
 
 /* Figuras: por baixo do texto; em caixas largas, ao lado */
 .texto .fig { margin: 0 0 calc(var(--cell-h) / 2); max-width: 62ch; }
@@ -314,27 +307,17 @@ body {
   max-height: calc(var(--cell-h) * 8);
   object-fit: contain;
   object-position: left top;
-  /* tingida com a cor da categoria (filtros definidos no index.html) */
+  /* tingida de --tinta (filtro definido no index.html) */
+  filter: url(#tinta);
 }
 /* o SVG só guarda o filtro; não ocupa espaço */
 .filtros { position: absolute; width: 0; height: 0; overflow: hidden; }
-.regiao[data-cat="resource-exploitation"] { --cor-cat: var(--cat-resource-exploitation); }
-.regiao[data-cat="registry-of-power"] { --cor-cat: var(--cat-registry-of-power); }
-.regiao[data-cat="web"] { --cor-cat: var(--cat-web); }
-.regiao[data-cat="data-objects"] { --cor-cat: var(--cat-data-objects); }
-.regiao[data-cat="resource-exploitation"] .fig img { filter: url(#tinta-resource-exploitation); }
-.regiao[data-cat="registry-of-power"] .fig img { filter: url(#tinta-registry-of-power); }
-.regiao[data-cat="web"] .fig img { filter: url(#tinta-web); }
-.regiao[data-cat="data-objects"] .fig img { filter: url(#tinta-data-objects); }
-.cor-resource-exploitation { flood-color: var(--cat-resource-exploitation); }
-.cor-registry-of-power { flood-color: var(--cat-registry-of-power); }
-.cor-web { flood-color: var(--cat-web); }
-.cor-data-objects { flood-color: var(--cat-data-objects); }
+.cor-tinta { flood-color: var(--tinta); }
 .texto .fig figcaption {
   margin-top: 6px;
   font-size: 11px;
   line-height: 1.15;
-  color: var(--muted);
+  color: var(--legenda);
 }
 @container (min-width: 640px) {
   .texto:has(.fig) {
@@ -349,18 +332,18 @@ body {
 }
 
 .texto a {
-  color: inherit;
+  color: var(--link);
   font-style: italic; /* Xanh Mono itálica (carregada no index.html) */
   text-decoration: underline;
-  text-decoration-color: var(--rule);
+  text-decoration-color: var(--link);
   text-underline-offset: 3px;
   cursor: pointer;
   border-radius: 2px;
   /* o fundo do hover sobe de baixo para cima (a partir do sublinhado) */
-  background: linear-gradient(var(--hover), var(--hover)) 0 100% / 100% 0% no-repeat;
+  background: linear-gradient(var(--link), var(--link)) 0 100% / 100% 0% no-repeat;
   transition: background-size .25s ease, color .25s ease, opacity .2s ease;
 }
-.texto a:hover { background-size: 100% 100%; color: var(--hover-texto); }
+.texto a:hover { background-size: 100% 100%; color: var(--link-texto); }
 .texto a:focus-visible { outline: 2px solid var(--rule); outline-offset: 1px; }
 /* ligação já aberta numa caixa vizinha: esbatida */
 .texto a.aberto { background-color: var(--aberta); color: var(--aberta-texto); opacity: .35; }
@@ -368,14 +351,14 @@ body {
 .texto a.aberto:hover { background-size: 100% 0%; color: var(--aberta-texto); }
 
 /* Botão [Extract] por baixo do texto: abre a citação seguinte (substitui o [n] no fim do parágrafo).
-   Ao passar o rato inverte: fundo --botao, texto da cor da caixa */
+   Ao passar o rato ganha o destaque das ligações: fundo --link, texto --link-texto */
 .acoes { display: flex; gap: 8px; }
 .extrair {
   all: unset;
   box-sizing: border-box;
   padding: 0 3px;
   margin-left: -3px; /* o [ fica alinhado com o texto; a folga só serve o fundo do hover */
-  font-family: var(--font);
+  font-family: var(--texto-font);
   font-size: 13px;
   line-height: calc(var(--cell-h) / 2);
   white-space: nowrap;
@@ -383,10 +366,10 @@ body {
   color: var(--botao-texto);
   cursor: pointer;
   /* o fundo do hover é um gradiente que cresce da esquerda para a direita */
-  background: linear-gradient(var(--botao), var(--botao)) 0 0 / 0% 100% no-repeat;
+  background: linear-gradient(var(--link), var(--link)) 0 0 / 0% 100% no-repeat;
   transition: background-size .25s ease, color .25s ease;
 }
-.extrair:hover { background-size: 100% 100%; color: var(--caixa); }
+.extrair:hover { background-size: 100% 100%; color: var(--link-texto); }
 .extrair:focus-visible { outline: 2px solid var(--rule); outline-offset: 2px; }
 /* depois de clicado, o botão desaparece (a caixa que abriu continua acessível pelas ligações e pelo mapa) */
 .extrair.aberto { display: none; }

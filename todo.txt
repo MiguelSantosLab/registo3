@@ -1,14 +1,15 @@
 Está em falta:
 
 cor:
-fundo escuro 900 azul
-piscinas fundo 700 ou 800 azul (ver contraste)
+fundo escuro 900 azul {#172554}
+piscinas fundo 700 ou 800 azul (ver contraste) {#1d4ed8}
 caixa inicial à base de azul (gradient)
 Links texto (400 azul {#60a5fa})
 Stroke das caixas (azul gradient rgb)
+categorias. #60a5fa
 
 Imagens:
-Manter um filtro azul sobre todas as imagens ##2563eb
+Manter um filtro azul sobre todas as imagens #2563eb
 
 Letra:
 Aumentar e usar sanserif nos textos

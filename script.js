@@ -435,7 +435,17 @@ function passoZoom(t) {
   zoomAnim = fim ? 0 : requestAnimationFrame(passoZoom);
 }
 // zoom relativo ao alvo em curso, para que vários passos da roda se acumulem
-const zoomPor = (sx, sy, f) => zoomSuave(sx, sy, (zoomAnim ? zoomAlvo : cam.z) * f);
+// Só há dois níveis de zoom: 0% (ZOOM_MIN) e 132% (Z_PERTO). Aproximar vai para 132%, afastar para 0%
+const Z_PERTO = ZOOM_MIN + (132 / 250) * (ZOOM_MAX - ZOOM_MIN);
+const zoomPor = (sx, sy, f) => { if (f !== 1) zoomSuave(sx, sy, f > 1 ? Z_PERTO : ZOOM_MIN); };
+// se um voo for interrompido a meio (arrasto, roda), acaba no nível mais próximo em vez de ficar num zoom intermédio
+function pararVoo() {
+  if (!voo) return;
+  cancelAnimationFrame(voo);
+  voo = 0;
+  if (!zoomAnim && cam.z !== ZOOM_MIN && cam.z !== Z_PERTO)
+    zoomSuave(mapa.clientWidth / 2, mapa.clientHeight / 2, cam.z > (ZOOM_MIN + Z_PERTO) / 2 ? Z_PERTO : ZOOM_MIN);
+}
 function pararZoom() {
   cancelAnimationFrame(zoomAnim);
   zoomAnim = 0;
@@ -458,7 +468,7 @@ function voarPara(alvo) {
     cam.x = W - (de.cx + (para.cx - de.cx) * e) * cam.z;
     cam.y = H - (de.cy + (para.cy - de.cy) * e) * cam.z;
     aplicarCamara();
-    if (k < 1) voo = requestAnimationFrame(passo);
+    voo = k < 1 ? requestAnimationFrame(passo) : 0;
   };
   voo = requestAnimationFrame(passo);
 }
@@ -483,10 +493,10 @@ function enquadrar(animar = true, zMax = 1) {
   if (animar) voarPara(alvo); else { Object.assign(cam, alvo); aplicarCamara(); }
 }
 
-// De longe, clicar numa caixa aproxima até 100%: a caixa fica centrada, ou encostada ao canto superior esquerdo se não couber
-const Z_100 = ZOOM_MIN + (100 / 250) * (ZOOM_MAX - ZOOM_MIN);
+// Aproxima até 132% com a caixa centrada no ecrã (ou encostada ao canto superior esquerdo se não couber).
+// Usado ao clicar numa caixa de longe e sempre que uma caixa abre
 function aproximar(c) {
-  const z = Z_100, m = 20;
+  const z = Z_PERTO, m = 20;
   const w = c.w * CW * z, h = c.h * CH * z;
   const x = w + 2 * m <= mapa.clientWidth ? (mapa.clientWidth - w) / 2 : m;
   const y = h + 2 * m <= mapa.clientHeight ? (mapa.clientHeight - h) / 2 : m;
@@ -494,13 +504,8 @@ function aproximar(c) {
 }
 
 // Traz uma caixa para o ecrã se ainda não estiver toda visível
-function mostrar(c) {
-  const x0 = c.x * CW, y0 = c.y * CH, x1 = (c.x + c.w) * CW, y1 = (c.y + c.h) * CH;
-  const m = 20;
-  const visivel = x0 * cam.z + cam.x >= m && y0 * cam.z + cam.y >= m
-    && x1 * cam.z + cam.x <= mapa.clientWidth - m && y1 * cam.z + cam.y <= mapa.clientHeight - m;
-  if (!visivel) voarPara(camaraPara(x0, y0, x1, y1, cam.z));
-}
+// a caixa aberta (nova ou já existente) fica sempre centrada no ecrã
+const mostrar = c => aproximar(c);
 
 // ---------- Abrir / desfazer ----------
 
@@ -550,6 +555,7 @@ function repor() {
 const ponteiros = new Map(); // pointerId -> {x, y}
 let arrasto = null;          // { x0, y0, ativo }
 let suprimirClique = false;
+let pinca = 1; // razão acumulada da pinça (toque)
 
 const local = e => {
   const r = mapa.getBoundingClientRect();
@@ -558,8 +564,9 @@ const local = e => {
 
 mapa.addEventListener('pointerdown', e => {
   if (e.pointerType === 'mouse' && e.button !== 0 && e.button !== 1) return;
-  cancelAnimationFrame(voo);
-  pararZoom();
+  // o zoom em curso continua até ao nível (o arrasto soma-se a ele); um voo interrompido acaba no nível mais próximo
+  pararVoo();
+  pinca = 1;
   ponteiros.set(e.pointerId, local(e));
   if (ponteiros.size === 1) arrasto = { ...local(e), ativo: false };
   // botão do meio: arrasta logo, sem esperar pelo limiar que distingue um clique
@@ -598,7 +605,10 @@ mapa.addEventListener('pointermove', e => {
     cam.x += (p.x - ant.x) / 2;
     cam.y += (p.y - ant.y) / 2;
     arrasto.ativo = true;
-    if (d0 > 0) zoomEm(mx, my, cam.z * d1 / d0); else aplicarCamara();
+    aplicarCamara();
+    // a pinça acumula a variação da distância; passado um limiar, salta para o nível seguinte
+    if (d0 > 0) pinca *= d1 / d0;
+    if (pinca > 1.15 || pinca < 0.87) { zoomPor(mx, my, pinca); pinca = 1; }
   }
   ponteiros.set(e.pointerId, p);
 });
@@ -635,9 +645,9 @@ function eTrackpad(e) {
 mapa.addEventListener('wheel', e => {
   e.preventDefault();
   const p = local(e);
-  if (e.ctrlKey) { zoomPor(p.x, p.y, Math.exp(-e.deltaY * 0.01)); return; }
+  if (e.ctrlKey) { if (Math.abs(e.deltaY) > 1) zoomPor(p.x, p.y, e.deltaY < 0 ? 2 : 0.5); return; }
   if (eTrackpad(e)) {
-    cancelAnimationFrame(voo);
+    pararVoo();
     cam.x -= e.deltaX;
     cam.y -= e.deltaY;
     aplicarCamara();

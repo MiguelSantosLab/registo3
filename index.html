@@ -14,29 +14,11 @@
     <script src="script.js" defer></script>
 </head>
 <body>
-    <!-- Filtros das figuras, um por categoria: passam a imagem a tons de cinzento e multiplicam-na pela cor da categoria -->
+    <!-- Filtro das figuras: passa a imagem a tons de cinzento e multiplica-a pela cor --tinta (igual para todas) -->
     <svg class="filtros" aria-hidden="true">
-        <filter id="tinta-resource-exploitation" color-interpolation-filters="sRGB">
+        <filter id="tinta" color-interpolation-filters="sRGB">
             <feColorMatrix type="saturate" values="0" result="cinza"/>
-            <feFlood class="cor-resource-exploitation" result="cor"/>
-            <feBlend in="cinza" in2="cor" mode="multiply" result="tinta"/>
-            <feComposite in="tinta" in2="SourceAlpha" operator="in"/>
-        </filter>
-        <filter id="tinta-registry-of-power" color-interpolation-filters="sRGB">
-            <feColorMatrix type="saturate" values="0" result="cinza"/>
-            <feFlood class="cor-registry-of-power" result="cor"/>
-            <feBlend in="cinza" in2="cor" mode="multiply" result="tinta"/>
-            <feComposite in="tinta" in2="SourceAlpha" operator="in"/>
-        </filter>
-        <filter id="tinta-web" color-interpolation-filters="sRGB">
-            <feColorMatrix type="saturate" values="0" result="cinza"/>
-            <feFlood class="cor-web" result="cor"/>
-            <feBlend in="cinza" in2="cor" mode="multiply" result="tinta"/>
-            <feComposite in="tinta" in2="SourceAlpha" operator="in"/>
-        </filter>
-        <filter id="tinta-data-objects" color-interpolation-filters="sRGB">
-            <feColorMatrix type="saturate" values="0" result="cinza"/>
-            <feFlood class="cor-data-objects" result="cor"/>
+            <feFlood class="cor-tinta" result="cor"/>
             <feBlend in="cinza" in2="cor" mode="multiply" result="tinta"/>
             <feComposite in="tinta" in2="SourceAlpha" operator="in"/>
         </filter>
@@ -70,29 +52,6 @@
                         <li>Berners-Lee, T., Cailliau, R., Luotonen, A., Nielsen, H. F., &amp; Secret, A. (2003). The World-Wide Web. In N. Wardrip-Fruin &amp; N. Montfort (Eds.), <i>The new media reader</i> (pp. 791–798). MIT Press. (Original work published 1994)</li>
                         <li>Agre, P. E. (2003). Surveillance and capture: Two models of privacy. In N. Wardrip-Fruin &amp; N. Montfort (Eds.), <i>The new media reader</i> (pp. 737–760). MIT Press. (Original work published 1994)</li>
                     </ul>
-                    <p class="sobre-titulo">Notes</p>
-                    <ol class="notas">
-                        <li><span class="nota-num">[1]</span> Crawford, <i>Atlas of AI</i>, sec. “What Is AI? Neither Artificial nor Intelligent,” par. 3.</li>
-                        <li><span class="nota-num">[2]</span> Crawford, <i>Atlas of AI</i>, sec. “Topographies of Computation,” par. 3.</li>
-                        <li><span class="nota-num">[3]</span> Crawford, <i>Atlas of AI</i>, sec. “Topographies of Computation,” par. 10.</li>
-                        <li><span class="nota-num">[4]</span> Chun, <i>Discriminating Data</i>, par. 5.</li>
-                        <li><span class="nota-num">[5]</span> Crawford, <i>Atlas of AI</i>, sec. “Potemkin AI and the Mechanical Turks,” par. 1.</li>
-                        <li><span class="nota-num">[6]</span> Crawford, <i>Atlas of AI</i>, sec. “Topographies of Computation,” par. 10.</li>
-                        <li><span class="nota-num">[7]</span> Chun, <i>Discriminating Data</i>, par. 1.</li>
-                        <li><span class="nota-num">[8]</span> Crawford, <i>Atlas of AI</i>, sec. “Enter Project Maven,” par. 7.</li>
-                        <li><span class="nota-num">[9]</span> Crawford, “The Outsourced State,” par. 10.</li>
-                        <li><span class="nota-num">[10]</span> Berners-Lee et al., “World-Wide Web,” 792.</li>
-                        <li><span class="nota-num">[11]</span> Berners-Lee et al., “World-Wide Web,” 794.</li>
-                        <li><span class="nota-num">[12]</span> Agre, “Surveillance and Capture,” 748.</li>
-                        <li><span class="nota-num">[13]</span> Agre, “Surveillance and Capture,” 748.</li>
-                        <li><span class="nota-num">[14]</span> Agre, “Surveillance and Capture,” 743.</li>
-                        <li><span class="nota-num">[15]</span> Agre, “Surveillance and Capture,” 744.</li>
-                        <li><span class="nota-num">[16]</span> Agre, “Surveillance and Capture,” 747.</li>
-                        <li><span class="nota-num">[17]</span> Agre, “Surveillance and Capture,” 754.</li>
-                        <li><span class="nota-num">[18]</span> Agre, “Surveillance and Capture,” 747.</li>
-                        <li><span class="nota-num">[19]</span> Agre, “Surveillance and Capture,” 741.</li>
-                        <li><span class="nota-num">[20]</span> Agre, “Surveillance and Capture,” 742.</li>
-                    </ol>
                 </section>
                 <p class="sobre-autores">Miguel Santos &amp; Ricardo Paulo, 2026</p>
             </div>
