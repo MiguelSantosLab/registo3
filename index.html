@@ -10,8 +10,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Xanh+Mono:ital@0;1&display=swap">
-    <link rel="stylesheet" href="styles.css?v=7">
-    <script src="script.js?v=3" defer></script>
+    <link rel="stylesheet" href="styles.css?v=10">
+    <script src="script.js?v=6" defer></script>
 </head>
 <body>
     <!-- Filtro das figuras: passa a imagem a tons de cinzento e multiplica-a pela cor --tinta (igual para todas) -->
@@ -57,6 +57,11 @@
             <!-- Terreno: map.jpg repetido em todas as direções, alinhado com o mundo (arrasta-se e amplia com as caixas) -->
             <div class="terreno" id="terreno" aria-hidden="true"></div>
             <div class="mundo" id="mundo"></div>
+            <!-- Título (só de longe): à esquerda e à direita da primeira caixa, por cima de todas as caixas -->
+            <div class="titulo-mapa" id="titulo-mapa" aria-label="Soil &amp; Soul in the age of control">
+                <span class="titulo-esq">Soil &amp; Soul</span>
+                <span class="titulo-dir">in the age of control</span>
+            </div>
         </main>
     </div>
 

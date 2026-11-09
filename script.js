@@ -4,6 +4,9 @@ const ZOOM_MIN = 0.12, ZOOM_MAX = 2.5;
 const ZOOM_LONGE = ZOOM_MIN + 0.1 * (ZOOM_MAX - ZOOM_MIN);
 const mapa = document.getElementById('mapa');
 const topo = document.querySelector('.top');
+const tituloMapa = document.getElementById('titulo-mapa');
+const tituloEsq = document.querySelector('.titulo-esq');
+const tituloDir = document.querySelector('.titulo-dir');
 const mundo = document.getElementById('mundo');
 const terreno = document.getElementById('terreno');
 const btnDesfazer = document.getElementById('desfazer');
@@ -335,6 +338,8 @@ function piscar(el) {
 // Enquanto a câmara se mexe, o mundo é tratado como uma imagem (will-change) para o movimento ser fluido;
 // quando para, o texto volta a ser desenhado nítido à escala final
 let paragem = 0;
+let zAnterior = null;      // para só promover a camada quando o zoom muda (não nos arrastos)
+let terrenoAte = Infinity; // até quando o terreno ainda se vê (a desvanecer) depois de deixar de estar de longe
 // Mantém a vista dentro do azulejo original do terreno (map.jpg ao seu tamanho no mundo):
 // o terreno continua repetido, mas o utilizador não pode arrastar nem afastar-se para fora dele.
 // Se a vista for maior do que o azulejo num eixo, fica centrada nesse eixo
@@ -352,16 +357,37 @@ function limitarCamara() {
 function aplicarCamara() {
   limitarCamara();
   mundo.style.transform = `translate(${cam.x}px, ${cam.y}px) scale(${cam.z})`;
-  if (azulejo) {
+  const longe = cam.z < ZOOM_LONGE;
+  const agora = performance.now();
+  if (longe) terrenoAte = Infinity;
+  else if (terrenoAte === Infinity) terrenoAte = agora + 600; // o fade-out dura 0.5s
+  // o terreno só é atualizado enquanto se vê: de perto (132%) esticá-lo a cada frame era pesado e fazia piscar
+  if (azulejo && agora < terrenoAte) {
     // cada repetição do terreno tem o tamanho do azulejo no mundo, à escala e posição da câmara
     terreno.style.backgroundSize = `${azulejo.w * cam.z}px ${azulejo.h * cam.z}px`;
     // +40: o terreno sai 40px para fora do mapa (margem do desfoque, ver styles.css)
     terreno.style.backgroundPosition = `${cam.x + 40 + azulejo.x * cam.z}px ${cam.y + 40 + azulejo.y * cam.z}px`;
   }
-  mundo.classList.add('movendo');
-  clearTimeout(paragem);
-  paragem = setTimeout(() => mundo.classList.remove('movendo'), 150);
-  mapa.classList.toggle('longe', cam.z < ZOOM_LONGE);
+  // camada própria (will-change) só durante o zoom; ao parar, sai para o texto voltar a ficar nítido.
+  // Nos arrastos a escala não muda, por isso não se troca de camada (era isso que fazia piscar)
+  if (cam.z !== zAnterior) {
+    zAnterior = cam.z;
+    mundo.classList.add('movendo');
+    clearTimeout(paragem);
+    paragem = setTimeout(() => mundo.classList.remove('movendo'), 250);
+  }
+  mapa.classList.toggle('longe', longe);
+  // título de longe: encostado aos lados da primeira caixa, centrado na sua altura.
+  // Escala com o zoom como se estivesse no mundo: no 0% tem o tamanho base (24–56px, 3.2% da largura)
+  const c0 = estado.caixas[0];
+  if (c0) {
+    const k = cam.z / ZOOM_MIN;
+    tituloMapa.style.fontSize = `${Math.min(56, Math.max(24, 0.032 * window.innerWidth)) * k}px`;
+    const folga = 16 * k, cy = cam.y + (c0.y + c0.h / 2) * CH * cam.z;
+    tituloEsq.style.right = `${mapa.clientWidth - (cam.x + c0.x * CW * cam.z) + folga}px`;
+    tituloDir.style.left = `${cam.x + (c0.x + c0.w) * CW * cam.z + folga}px`;
+    tituloEsq.style.top = tituloDir.style.top = `${cy}px`;
+  }
   // a navegação do topo só aparece quando o conteúdo das caixas se vê
   topo.classList.toggle('escondida', cam.z < ZOOM_LONGE);
   if (cam.z < ZOOM_LONGE && !sobre.hidden) mostrarSobre(false);

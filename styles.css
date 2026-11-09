@@ -37,6 +37,7 @@
   --tinta: #0000FF;   /* cor do filtro sobre todas as figuras */
   --link: #B0AFD9;    /* palavras ligadas: texto, sublinhado e destaque ao passar o rato */
   --link-texto: #fbfbfb; /* texto sobre o destaque --link */
+  --titulo: #fbfbfb;  /* título do mapa (vista de longe) */
   --cell-w: 35px;
   --cell-h: 35px;
   --font: "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -209,10 +210,11 @@ body {
   inset: -40px;
   background: url("images/Final%20Images/map.jpg") repeat;
   opacity: 0;
-  transition: opacity .5s ease;
+  visibility: hidden; /* depois do fade, deixa de ser desenhado */
+  transition: opacity .5s ease, visibility 0s linear .5s;
   pointer-events: none;
 }
-.mapa.longe .terreno { opacity: 1; }
+.mapa.longe .terreno { opacity: 1; visibility: visible; transition: opacity .5s ease, visibility 0s; }
 .mapa.a-arrastar { cursor: grabbing; }
 .mundo {
   position: absolute;
@@ -223,6 +225,24 @@ body {
   -webkit-user-select: none;
 }
 .mundo.movendo { will-change: transform; }
+/* Título de longe: "Soil & Soul" à esquerda e "in the age of control" à direita da primeira caixa.
+   Fica por cima das caixas, ao tamanho do ecrã (o script posiciona-o a cada frame);
+   só se vê de longe e desvanece quando o texto das caixas aparece */
+.titulo-mapa {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  color: var(--titulo);
+  font-family: var(--font);
+  font-size: clamp(24px, 3.2vw, 56px); /* tamanho no 0%; o script multiplica-o pelo zoom */
+  line-height: 1;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity .5s ease;
+}
+.mapa.longe .titulo-mapa { opacity: 1; }
+.titulo-esq, .titulo-dir { position: absolute; transform: translateY(-50%); }
 /* Área invisível onde se mede a altura que cada caixa precisa */
 .medidor {
   position: absolute;
