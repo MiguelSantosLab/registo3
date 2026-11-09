@@ -1,19 +1,13 @@
 const CW = 55, CH = 35;            // célula da grelha do mapa, em px
 const ZOOM_MIN = 0.12, ZOOM_MAX = 2.5;
-// abaixo de 25% (na escala do topo) as caixas mostram só o número, com a imagem de fundo
+// abaixo de 25% (na escala do topo) as caixas ficam só com a cor de fundo, sem texto
 const ZOOM_LONGE = ZOOM_MIN + 0.1 * (ZOOM_MAX - ZOOM_MIN);
 const mapa = document.getElementById('mapa');
 const topo = document.querySelector('.top');
 const mundo = document.getElementById('mundo');
 const terreno = document.getElementById('terreno');
-const tituloEl = document.getElementById('titulo');
-const info = document.getElementById('info');
-const ramos = document.getElementById('ramos');
-const zoomInfo = document.getElementById('zoom');
 const btnDesfazer = document.getElementById('desfazer');
 const btnRepor = document.getElementById('repor');
-const btnMais = document.getElementById('mais');
-const btnMenos = document.getElementById('menos');
 const btnCentrar = document.getElementById('centrar');
 const btnSobre = document.getElementById('sobre-btn');
 const sobre = document.getElementById('sobre');
@@ -57,25 +51,6 @@ let proxId = 1;
 let estado = { caixas: [], historico: [] };
 const elementos = new Map(); // id da caixa -> elemento
 
-// Imagens de fundo (vistas de longe), por categoria; cada caixa nova recebe uma ao acaso da sua categoria,
-// diferente da caixa de onde veio quando houver alternativa
-// só PNG: images/Final Images/piscinaN.png (ainda não há piscina3.png nem piscina10.png)
-const piscinas = (...ns) => ns.map(n => `images/Final%20Images/piscina${n}.png`);
-const FUNDOS = {
-  "resource-exploitation": piscinas(1, 2, 11),
-  "registry-of-power": piscinas(4, 5),
-  "web": piscinas(6, 7),
-  "data-objects": piscinas(8, 9),
-};
-function fundoAoAcaso(item, evitar) {
-  const todas = FUNDOS[itens[item].cat] || Object.values(FUNDOS).flat();
-  const opcoes = todas.length > 1 ? todas.filter(f => f !== evitar) : todas;
-  return opcoes[Math.floor(Math.random() * opcoes.length)];
-}
-// Filtro da imagem de fundo, sorteado por caixa: brilho entre 0 e 10, matiz entre -15deg e 20deg
-const entre = (a, b) => a + Math.random() * (b - a);
-const filtroAoAcaso = () => `brightness(${entre(1, 1.2).toFixed(2)}) hue-rotate(${entre(-15, 20).toFixed(1)}deg)`;
-
 // Câmara: ponto no ecrã = ponto no mundo * z + (x, y)
 const cam = { x: 0, y: 0, z: 1 };
 
@@ -90,8 +65,6 @@ function criarElemento(caixa) {
       <span class="num"></span><span class="cat"></span><span class="origem"></span>
     </div>
     <div class="texto"></div>`;
-  if (caixa.fundo) el.style.setProperty('--fundo', `url("${caixa.fundo}")`);
-  if (caixa.filtro) el.style.setProperty('--filtro', caixa.filtro);
   el.querySelector('.num').textContent = `[${it.n}]`;
   el.querySelector('.cat').textContent = nomeCat(it.cat);
   if (caixa.origem) el.querySelector('.origem').textContent = `← ${caixa.origem.rotulo}`;
@@ -362,7 +335,22 @@ function piscar(el) {
 // Enquanto a câmara se mexe, o mundo é tratado como uma imagem (will-change) para o movimento ser fluido;
 // quando para, o texto volta a ser desenhado nítido à escala final
 let paragem = 0;
+// Mantém a vista dentro do azulejo original do terreno (map.jpg ao seu tamanho no mundo):
+// o terreno continua repetido, mas o utilizador não pode arrastar nem afastar-se para fora dele.
+// Se a vista for maior do que o azulejo num eixo, fica centrada nesse eixo
+function limitarCamara() {
+  if (!azulejo) return;
+  const W = mapa.clientWidth, H = mapa.clientHeight, z = cam.z;
+  const eixo = (v, tamEcra, a0, aTam) => {
+    const min = tamEcra - (a0 + aTam) * z, max = -a0 * z;
+    return min > max ? (tamEcra - (2 * a0 + aTam) * z) / 2 : Math.min(max, Math.max(min, v));
+  };
+  cam.x = eixo(cam.x, W, azulejo.x, azulejo.w);
+  cam.y = eixo(cam.y, H, azulejo.y, azulejo.h);
+}
+
 function aplicarCamara() {
+  limitarCamara();
   mundo.style.transform = `translate(${cam.x}px, ${cam.y}px) scale(${cam.z})`;
   if (azulejo) {
     // cada repetição do terreno tem o tamanho do azulejo no mundo, à escala e posição da câmara
@@ -377,25 +365,10 @@ function aplicarCamara() {
   // a navegação do topo só aparece quando o conteúdo das caixas se vê
   topo.classList.toggle('escondida', cam.z < ZOOM_LONGE);
   if (cam.z < ZOOM_LONGE && !sobre.hidden) mostrarSobre(false);
-  zoomInfo.textContent = `${percentagem(cam.z)}%`;
-  tituloEl.classList.toggle('escondido', percentagem(cam.z) > 1);
-  if (titulo) {
-    // posição e tamanho do título no ecrã, como se estivesse no mundo
-    Object.assign(tituloEl.style, {
-      left: `${cam.x + titulo.x * cam.z}px`, top: `${cam.y + titulo.y * cam.z}px`,
-      width: `${titulo.w * cam.z}px`, height: `${titulo.h * cam.z}px`,
-    });
-  }
 }
 
 function atualizarEstado() {
   const n = estado.caixas.length;
-  info.textContent = `${n} ${n === 1 ? 'box' : 'boxes'}`;
-  // ramificações possíveis: ligações das caixas abertas que ainda não foram abertas
-  const abertas = new Set(estado.caixas.filter(c => c.origem).map(c => `${c.origem.de}:${c.origem.ancora}`));
-  let r = 0;
-  for (const c of estado.caixas) itens[c.item].ancoras.forEach((_, i) => { if (!abertas.has(`${c.id}:${i}`)) r++; });
-  ramos.textContent = `${r} ${r === 1 ? 'ramification' : 'ramifications'}`;
   btnDesfazer.disabled = n <= 1;
   btnRepor.disabled = n <= 1;
 }
@@ -520,7 +493,7 @@ function abrir(caixa, ancora) {
   const { alvo, origem } = origemDe(caixa, ancora);
   const lugar = colocar(alvo, caixa);
   if (!lugar) return;
-  const nova = { id: proxId++, item: alvo, origem, x: lugar.x, y: lugar.y, w: lugar.w, h: lugar.h, fundo: fundoAoAcaso(alvo, caixa.fundo), filtro: filtroAoAcaso() };
+  const nova = { id: proxId++, item: alvo, origem, x: lugar.x, y: lugar.y, w: lugar.w, h: lugar.h };
   estado.caixas.push(nova);
   estado.historico.push(preencher());
   desenhar(new Set([nova.id]));
@@ -537,9 +510,8 @@ function desfazer() {
 
 function estadoNovo() {
   const w = larguraBase(primeiro);
-  // a primeira caixa começa sempre com a piscina1
   return {
-    caixas: [{ id: proxId++, item: primeiro, origem: null, x: 0, y: 0, w, h: alturaMin(primeiro, w), fundo: piscinas(1)[0], filtro: filtroAoAcaso() }],
+    caixas: [{ id: proxId++, item: primeiro, origem: null, x: 0, y: 0, w, h: alturaMin(primeiro, w) }],
     historico: [], // por cada caixa aberta: [caixa, tamanho anterior] das que foram esticadas
   };
 }
@@ -547,7 +519,7 @@ function estadoNovo() {
 function repor() {
   estado = estadoNovo();
   desenhar();
-  vistaTitulo(true);
+  vistaInicial(true);
 }
 
 // ---------- Interação: arrastar (botão esquerdo ou do meio), zoom, pinça ----------
@@ -684,10 +656,8 @@ document.addEventListener('keydown', e => {
 
 btnDesfazer.addEventListener('click', desfazer);
 btnRepor.addEventListener('click', repor);
-btnMais.addEventListener('click', () => zoomCentro(1.25));
-btnMenos.addEventListener('click', () => zoomCentro(0.8));
 // volta à vista inicial: a primeira caixa no mesmo sítio do ecrã que ao abrir o site (título centrado, zoom 0%)
-btnCentrar.addEventListener('click', () => vistaTitulo(true));
+btnCentrar.addEventListener('click', () => vistaInicial(true));
 
 // Painel de informação: o botão (i) abre-o e passa a X, que o fecha; Esc e esconder o topo também fecham
 function mostrarSobre(abrir) {
@@ -717,26 +687,10 @@ function colocarTerreno() {
   azulejo = { x: cx - w / 2, y: cy - h / 2, w, h };
 }
 
-// Título (title.svg, em linha no index.html): está colocado no mundo à volta da primeira caixa,
-// mas é desenhado fora dele, ao tamanho do ecrã (ver aplicarCamara).
-// TITULO_FOCO é o ponto do título (em fração da largura/altura do viewBox 1185x699) onde fica o centro
-// da primeira caixa: o espaço entre "Soil & Soul" e "in the age". Afinar aqui se o SVG mudar.
-const TITULO_PROP = 699 / 1185;
-const TITULO_FOCO = { x: 0.5, y: 0.36 };
-let titulo = null; // { x, y, w, h } em px do mundo
-function colocarTitulo() {
-  const W = mapa.clientWidth, H = mapa.clientHeight;
-  // no zoom 0% o título ocupa até 80% da largura e da altura do ecrã
-  const w = Math.min(W * 0.8, H * 0.8 / TITULO_PROP) / ZOOM_MIN, h = w * TITULO_PROP;
-  const c = estado.caixas[0];
-  const cx = (c.x + c.w / 2) * CW, cy = (c.y + c.h / 2) * CH;
-  titulo = { x: cx - TITULO_FOCO.x * w, y: cy - TITULO_FOCO.y * h, w, h };
-}
-// Vista inicial: zoom 0% com o título centrado no ecrã (e a primeira caixa no meio do texto)
-function vistaTitulo(animar = true) {
-  colocarTitulo();
-  const W = mapa.clientWidth, H = mapa.clientHeight, z = ZOOM_MIN;
-  const alvo = { z, x: W / 2 - (titulo.x + titulo.w / 2) * z, y: H / 2 - (titulo.y + titulo.h / 2) * z };
+// Vista inicial: zoom 0% com a primeira caixa centrada no ecrã
+function vistaInicial(animar = true) {
+  const c = estado.caixas[0], W = mapa.clientWidth, H = mapa.clientHeight, z = ZOOM_MIN;
+  const alvo = { z, x: W / 2 - (c.x + c.w / 2) * CW * z, y: H / 2 - (c.y + c.h / 2) * CH * z };
   cancelAnimationFrame(voo);
   pararZoom();
   if (animar) voarPara(alvo); else { Object.assign(cam, alvo); aplicarCamara(); }
@@ -748,5 +702,5 @@ Promise.all([carregarImagens(), letraPronta, terrenoPronto]).then(() => {
   estado = estadoNovo();
   colocarTerreno();
   desenhar();
-  vistaTitulo(false);
+  vistaInicial(false);
 });

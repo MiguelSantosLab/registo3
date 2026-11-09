@@ -13,34 +13,35 @@
   --cell-h: 35px;
   --font: "Helvetica Neue", Helvetica, Arial, sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  color-scheme: light;
+  color-scheme: dark;
 }
   */
 :root {
-  --paper: #fbfbfb;
-  --caixa: #1d4ed8;   /* fundo das caixas */
-  --topo: #1D1816;    /* fundo da faixa de topo */
+  --paper: #131026;  /* fundo da página e do mapa */
+  --caixa: #0000FF;   /* fundo das caixas */
+  --topo-hover: #fbfbfb; /* fundo dos botões do topo ao passar o rato (desce de cima) */
+  --topo-hover-texto: #1D1816; /* texto dos botões do topo ao passar o rato */
   --contorno: #fbfbfb; /* contorno das caixas */
   --grid: #0000ff;
   --rule: #F3F1F1;
-  --ink: #F3F1F1;
+  --ink: #fbfbfb;     /* texto principal */
   --muted: #787878;
   --hover: #F3F1F1;
   --hover-texto: #1D1816; /* texto sobre o fundo de --hover */
   --aberta: #1D1816;  /* fundo das palavras ligadas já abertas */
   --aberta-texto: #ffffff; /* texto das palavras ligadas já abertas */
-  --botao-texto: #F3F1F1; /* texto do [Extract] */
+  --botao-texto: #B0AFD9; /* texto do [Extract] */
   --info-fundo: #fbfbfb; /* fundo do painel de informação (i) */
   --info-texto: #1D1816; /* texto do painel de informação */
-  --cat: #60a5fa;     /* número e nome da categoria no topo das caixas (igual para todas) */
-  --tinta: #2563eb;   /* cor do filtro sobre todas as figuras */
-  --link: #60a5fa;    /* palavras ligadas: texto, sublinhado e destaque ao passar o rato */
+  --cat: #B0AFD9;     /* número e nome da categoria no topo das caixas (igual para todas) */
+  --tinta: #0000FF;   /* cor do filtro sobre todas as figuras */
+  --link: #B0AFD9;    /* palavras ligadas: texto, sublinhado e destaque ao passar o rato */
   --link-texto: #fbfbfb; /* texto sobre o destaque --link */
   --cell-w: 35px;
   --cell-h: 35px;
   --font: "Helvetica Neue", Helvetica, Arial, sans-serif;
   --texto-font: "Xanh Mono", ui-monospace, monospace; /* títulos: categoria das caixas, [Extract +], painel de informação (Google Fonts, ligada no index.html) */
-  --legenda: #60a5fa; /* legendas das figuras */
+  --legenda: #B0AFD9; /* legendas das figuras */
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   color-scheme: light;
 }
@@ -68,9 +69,8 @@ body {
   align-self: start;
   position: relative;
   z-index: 2;
-  border-bottom: 1px solid var(--contorno);
   min-width: 0;
-  background: var(--topo);
+  background: transparent;
   transition: opacity .5s ease, visibility 0s linear 0s;
 }
 .top.escondida {
@@ -82,33 +82,24 @@ body {
   display: flex;
   align-items: center;
   min-width: 0;
+  justify-content: flex-end;
   overflow-x: auto;
   scrollbar-width: none;
 }
 .estado::-webkit-scrollbar { display: none; }
-.info {
-  padding: 0 18px;
-  white-space: nowrap;
-  color: var(--muted);
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  font-variant-numeric: tabular-nums;
-  text-transform: uppercase;
-}
-/* o contador de ramificações fica logo a seguir ao de caixas e empurra os botões para a direita */
-.info.ramos { padding-left: 0; margin-right: auto; }
 .acao {
   all: unset;
   box-sizing: border-box;
   height: var(--cell-h);
   padding: 0 16px;
   white-space: nowrap;
-  border-left: 1px solid var(--contorno);
   cursor: pointer;
   color: var(--ink);
+  /* ao passar o rato, um fundo sólido desce de cima: --topo-hover (branco), e o texto escurece */
+  background: linear-gradient(var(--topo-hover), var(--topo-hover)) 0 0 / 100% 0% no-repeat;
+  transition: background-size .25s ease, color .25s ease;
 }
-.acao:hover:not(:disabled) { background: var(--hover); color: var(--hover-texto); }
+.acao:hover:not(:disabled) { background-size: 100% 100%; color: var(--topo-hover-texto); }
 .acao:disabled { color: var(--muted); cursor: default; }
 .acao:focus-visible { outline: 2px solid var(--rule); outline-offset: -2px; }
 /* Botão (i)/(X): quadrado com ícone; fica por cima do painel para o poder fechar */
@@ -125,9 +116,11 @@ body {
 .sobre-btn .icone-fechar { display: none; }
 .sobre-btn.ativo .icone-info { display: none; }
 .sobre-btn.ativo .icone-fechar { display: block; }
-/* com o painel aberto, o X fica sobre o vermelho: sem fundo nem separador, na cor do texto do painel */
-.sobre-btn.ativo { color: var(--info-texto); border-left-color: transparent; }
-.sobre-btn.ativo:hover { background: var(--info-texto); color: var(--info-fundo); }
+/* com o painel aberto, o X fica sobre o fundo do painel: sem fundo nem separador, na cor do texto do painel */
+.sobre-btn.ativo { color: var(--info-texto); }
+/* com o painel aberto (fundo branco), o hover do X fica escuro */
+.sobre-btn.ativo { --topo-hover: var(--info-texto); }
+.sobre-btn.ativo:hover { color: var(--info-fundo); }
 /* Painel de informação: ocupa o ecrã todo, topo incluído (só o X fica por cima);
    à esquerda a descrição do projeto, à direita as referências */
 .sobre {
@@ -182,6 +175,8 @@ body {
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
+/* imagem no topo da coluna das referências */
+.sobre-imagem { display: block; width: 100%; max-width: 40em; height: auto; margin-bottom: 32px; }
 .sobre-referencias ul { margin: 0; padding: 0; list-style: none; max-width: 40em; }
 /* referências com recuo pendente (APA) */
 .sobre-referencias li { padding-left: 2em; text-indent: -2em; line-height: 1.45; }
@@ -206,17 +201,18 @@ body {
 }
 /* Terreno: map.jpg repetido sem fim em todas as direções; o script alinha o tamanho e a posição
    das repetições com a câmara, por isso acompanha o arrasto e o zoom.
-   Nítido de longe (até 25%); quando o texto das caixas aparece, fica desfocado e mais escuro em 0.5s.
-   Sai 40px para fora do mapa para o desfoque não clarear as margens */
+   Só se vê de longe (até 25%); quando o texto das caixas aparece, desvanece em 0.5s
+   e o fundo do mapa fica na cor sólida --paper.
+   Sai 40px para fora do mapa (margem herdada do antigo desfoque; o script conta com ela) */
 .terreno {
   position: absolute;
   inset: -40px;
   background: url("images/Final%20Images/map.jpg") repeat;
-  filter: blur(20px) brightness(.7);
-  transition: filter .5s ease;
+  opacity: 0;
+  transition: opacity .5s ease;
   pointer-events: none;
 }
-.mapa.longe .terreno { filter: blur(0) brightness(1); }
+.mapa.longe .terreno { opacity: 1; }
 .mapa.a-arrastar { cursor: grabbing; }
 .mundo {
   position: absolute;
@@ -227,16 +223,6 @@ body {
   -webkit-user-select: none;
 }
 .mundo.movendo { will-change: transform; }
-/* Título: fica entre o terreno e as caixas, fora do mundo; a cada frame o script dá-lhe a posição
-   e o tamanho no ecrã que teria no mundo (assim o SVG é desenhado ao tamanho real, sem piscar).
-   Só aparece entre 0% e 1% de zoom; acima disso desvanece */
-.titulo {
-  position: absolute;
-  pointer-events: none;
-  transition: opacity .4s ease;
-}
-.titulo.escondido { opacity: 0; }
-.titulo-svg { display: block; overflow: visible; }
 /* Área invisível onde se mede a altura que cada caixa precisa */
 .medidor {
   position: absolute;
@@ -258,8 +244,8 @@ body {
   background: var(--caixa);
   transition: border-color .5s ease, background-color .5s ease;
 }
-/* De longe (conteúdo escondido) a caixa fica sem contorno nem fundo: só a imagem */
-.mapa.longe .regiao { border-color: transparent; background-color: transparent; }
+/* De longe (conteúdo escondido) a caixa fica sem contorno: só a cor sólida --caixa */
+.mapa.longe .regiao { border-color: transparent; }
 /* de longe, clicar numa caixa aproxima até 100% */
 .mapa.longe .regiao { cursor: zoom-in; }
 .regiao.nova { animation: acender .7s ease-out; }
@@ -307,9 +293,10 @@ body {
   max-height: calc(var(--cell-h) * 8);
   object-fit: contain;
   object-position: left top;
-  /* tingida de --tinta (filtro definido no index.html) */
+  /* tingida de --tinta (filtro definido no index.html); ao passar o rato mostra as cores originais */
   filter: url(#tinta);
 }
+.texto .fig img:hover { filter: none; }
 /* o SVG só guarda o filtro; não ocupa espaço */
 .filtros { position: absolute; width: 0; height: 0; overflow: hidden; }
 .cor-tinta { flood-color: var(--tinta); }
@@ -374,22 +361,9 @@ body {
 /* depois de clicado, o botão desaparece (a caixa que abriu continua acessível pelas ligações e pelo mapa) */
 .extrair.aberto { display: none; }
 
-/* De longe, cada caixa mostra só a sua imagem de fundo */
+/* De longe, cada caixa mostra só a cor de fundo */
 .mapa.longe .cabeca, .mapa.longe .texto { visibility: hidden; }
 
-/* Imagem de fundo de cada caixa (--fundo, escolhida ao acaso no script):
-   visível de 0% a 25% de zoom; acima disso desvanece em 0.5s */
-.regiao::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: var(--fundo) 0 0 / 100% 100% no-repeat; /* esticada, sem cortes */
-  filter: var(--filtro, none); /* brilho e matiz sorteados por caixa */
-  opacity: 0;
-  transition: opacity .5s ease;
-  pointer-events: none;
-}
-.mapa.longe .regiao::before { opacity: 1; }
 .cabeca, .texto { position: relative; z-index: 1; }
 
 @container (max-width: 330px) {
@@ -397,16 +371,6 @@ body {
   .cabeca { padding-left: 14px; }
 }
 
-.zoom {
-  padding: 0 12px;
-  color: var(--muted);
-  font-family: var(--mono);
-  font-size: 11px;
-  font-variant-numeric: tabular-nums;
-}
-@media (max-width: 640px) {
-  .info, .zoom { display: none; }
-}
 @media (prefers-reduced-motion: reduce) {
   .regiao.nova { animation: none; }
 }
