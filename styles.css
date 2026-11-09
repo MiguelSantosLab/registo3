@@ -177,6 +177,10 @@ body {
   text-transform: uppercase;
 }
 /* imagem no topo da coluna das referências */
+/* imagem e legenda ligam à página do USGS (abre noutro separador) */
+.sobre-link { display: block; color: inherit; text-decoration: none; }
+.sobre-link:hover figcaption { text-decoration: underline; text-underline-offset: 3px; }
+.sobre-link:focus-visible { outline: 2px solid var(--info-texto); outline-offset: 4px; }
 .sobre-figura { margin: 0 0 32px; max-width: 40em; }
 .sobre-imagem { display: block; width: 100%; height: auto; }
 .sobre-figura figcaption { margin-top: 6px; font-size: 11px; line-height: 1.3; }
